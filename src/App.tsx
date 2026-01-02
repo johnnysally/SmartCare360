@@ -16,6 +16,14 @@ import Telemedicine from "./pages/Telemedicine";
 import Analytics from "./pages/Analytics";
 import NotFound from "./pages/NotFound";
 
+// Doctor Pages
+import DoctorDashboard from "./pages/doctor/DoctorDashboard";
+import Consultations from "./pages/doctor/Consultations";
+import Prescriptions from "./pages/doctor/Prescriptions";
+import LabResults from "./pages/doctor/LabResults";
+import Schedule from "./pages/doctor/Schedule";
+import MedicalNotes from "./pages/doctor/MedicalNotes";
+
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -36,6 +44,15 @@ const App = () => (
           <Route path="/pharmacy" element={<Pharmacy />} />
           <Route path="/telemedicine" element={<Telemedicine />} />
           <Route path="/analytics" element={<Analytics />} />
+          
+          {/* Doctor Routes */}
+          <Route path="/doctor/dashboard" element={<DoctorDashboard />} />
+          <Route path="/doctor/consultations" element={<Consultations />} />
+          <Route path="/doctor/prescriptions" element={<Prescriptions />} />
+          <Route path="/doctor/lab-results" element={<LabResults />} />
+          <Route path="/doctor/schedule" element={<Schedule />} />
+          <Route path="/doctor/medical-notes" element={<MedicalNotes />} />
+          
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
