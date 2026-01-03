@@ -24,6 +24,15 @@ import LabResults from "./pages/doctor/LabResults";
 import Schedule from "./pages/doctor/Schedule";
 import MedicalNotes from "./pages/doctor/MedicalNotes";
 
+// Admin Pages
+import AdminDashboard from "./pages/admin/AdminDashboard";
+import UserManagement from "./pages/admin/UserManagement";
+import StaffManagement from "./pages/admin/StaffManagement";
+import ClinicSettings from "./pages/admin/ClinicSettings";
+import SystemLogs from "./pages/admin/SystemLogs";
+import Reports from "./pages/admin/Reports";
+import RolesPermissions from "./pages/admin/RolesPermissions";
+
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -52,6 +61,15 @@ const App = () => (
           <Route path="/doctor/lab-results" element={<LabResults />} />
           <Route path="/doctor/schedule" element={<Schedule />} />
           <Route path="/doctor/medical-notes" element={<MedicalNotes />} />
+          
+          {/* Admin Routes */}
+          <Route path="/admin/dashboard" element={<AdminDashboard />} />
+          <Route path="/admin/users" element={<UserManagement />} />
+          <Route path="/admin/staff" element={<StaffManagement />} />
+          <Route path="/admin/clinic-settings" element={<ClinicSettings />} />
+          <Route path="/admin/logs" element={<SystemLogs />} />
+          <Route path="/admin/reports" element={<Reports />} />
+          <Route path="/admin/roles" element={<RolesPermissions />} />
           
           <Route path="*" element={<NotFound />} />
         </Routes>
