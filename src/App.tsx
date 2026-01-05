@@ -63,6 +63,18 @@ import Performance from "./pages/management/Performance";
 import ITDashboard from "./pages/it/ITDashboard";
 import AuditLogs from "./pages/it/AuditLogs";
 
+// CHW Pages
+import CHWDashboard from "./pages/chw/CHWDashboard";
+import FollowUps from "./pages/chw/FollowUps";
+import HomeVisits from "./pages/chw/HomeVisits";
+import MaternalHealth from "./pages/chw/MaternalHealth";
+
+// AI Pages
+import AIDashboard from "./pages/ai/AIDashboard";
+
+// Referral Pages
+import ReferralDashboard from "./pages/referral/ReferralDashboard";
+
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -130,6 +142,18 @@ const App = () => (
           {/* IT Routes */}
           <Route path="/it/dashboard" element={<ITDashboard />} />
           <Route path="/it/logs" element={<AuditLogs />} />
+          
+          {/* CHW Routes */}
+          <Route path="/chw/dashboard" element={<CHWDashboard />} />
+          <Route path="/chw/followups" element={<FollowUps />} />
+          <Route path="/chw/visits" element={<HomeVisits />} />
+          <Route path="/chw/maternal" element={<MaternalHealth />} />
+          
+          {/* AI Routes */}
+          <Route path="/ai/dashboard" element={<AIDashboard />} />
+          
+          {/* Referral Routes */}
+          <Route path="/referral/dashboard" element={<ReferralDashboard />} />
           
           <Route path="*" element={<NotFound />} />
         </Routes>
