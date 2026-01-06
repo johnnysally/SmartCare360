@@ -1,26 +1,26 @@
 import { ReactNode, useState } from "react";
-import { useLocation, Link } from "react-router-dom";
-import { cn } from "@/lib/utils";
-import { 
-  HeartPulse, 
-  Pill, 
-  ClipboardList, 
+import { Link, useLocation } from "react-router-dom";
+import {
+  LayoutDashboard,
+  Activity,
+  Pill,
+  ClipboardList,
   ListTodo,
-  Menu, 
-  X, 
-  Settings, 
+  Settings,
   LogOut,
+  Heart,
   Bell,
   Search,
+  Menu,
+  X,
   Stethoscope,
-  Activity
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { cn } from "@/lib/utils";
 
 const menuItems = [
-  { icon: HeartPulse, label: "Dashboard", path: "/nurse/dashboard" },
+  { icon: LayoutDashboard, label: "Dashboard", path: "/nurse/dashboard" },
   { icon: Activity, label: "Vitals Capture", path: "/nurse/vitals" },
   { icon: Pill, label: "Medications", path: "/nurse/medications" },
   { icon: ClipboardList, label: "Care Notes", path: "/nurse/notes" },
@@ -37,101 +37,125 @@ const NurseLayout = ({ children, title }: NurseLayoutProps) => {
   const location = useLocation();
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background flex">
       {/* Sidebar */}
-      <aside className={cn(
-        "fixed left-0 top-0 z-40 h-screen bg-sidebar-background transition-all duration-300",
-        sidebarOpen ? "w-64" : "w-20"
-      )}>
-        <div className="flex h-full flex-col">
-          {/* Logo */}
-          <div className="flex h-16 items-center justify-between px-4 border-b border-sidebar-border">
-            <Link to="/nurse/dashboard" className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-success/20 flex items-center justify-center">
-                <Stethoscope className="w-6 h-6 text-success" />
-              </div>
-              {sidebarOpen && (
-                <span className="text-xl font-bold text-sidebar-foreground font-display">
-                  Nurse Portal
+      <aside
+        className={cn(
+          "fixed inset-y-0 left-0 z-50 flex flex-col bg-sidebar border-r border-sidebar-border transition-all duration-300",
+          sidebarOpen ? "w-64" : "w-20"
+        )}
+      >
+        {/* Logo */}
+        <div className="h-16 flex items-center justify-between px-4 border-b border-sidebar-border">
+          <Link to="/nurse/dashboard" className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-sidebar-primary flex items-center justify-center shrink-0">
+              <Stethoscope className="w-6 h-6 text-sidebar-primary-foreground" />
+            </div>
+            {sidebarOpen && (
+              <div className="flex flex-col">
+                <span className="font-display text-lg font-bold text-sidebar-foreground leading-tight">
+                  SmartCare360
                 </span>
-              )}
-            </Link>
-          </div>
+                <span className="text-xs text-sidebar-foreground/70">Nurse Portal</span>
+              </div>
+            )}
+          </Link>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="text-sidebar-foreground hover:bg-sidebar-accent lg:hidden"
+            onClick={() => setSidebarOpen(!sidebarOpen)}
+          >
+            {sidebarOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+          </Button>
+        </div>
 
-          {/* Navigation */}
-          <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
-            {menuItems.map((item) => {
-              const isActive = location.pathname === item.path;
-              return (
-                <Link
-                  key={item.path}
-                  to={item.path}
-                  className={cn(
-                    "flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200",
-                    isActive 
-                      ? "bg-success/20 text-success" 
-                      : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground"
-                  )}
-                >
-                  <item.icon className="w-5 h-5 flex-shrink-0" />
-                  {sidebarOpen && <span className="font-medium">{item.label}</span>}
-                </Link>
-              );
-            })}
-          </nav>
+        {/* Navigation */}
+        <nav className="flex-1 py-4 px-3 space-y-1 overflow-y-auto">
+          {menuItems.map((item) => {
+            const isActive = location.pathname === item.path;
+            return (
+              <Link
+                key={item.path}
+                to={item.path}
+                className={cn(
+                  "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors",
+                  isActive
+                    ? "bg-sidebar-primary text-sidebar-primary-foreground"
+                    : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                )}
+              >
+                <item.icon className="w-5 h-5 shrink-0" />
+                {sidebarOpen && <span>{item.label}</span>}
+              </Link>
+            );
+          })}
+        </nav>
 
-          {/* User Profile */}
-          {sidebarOpen && (
-            <div className="p-4 border-t border-sidebar-border">
-              <div className="flex items-center gap-3 p-3 rounded-lg bg-sidebar-accent">
-                <Avatar className="w-10 h-10 border-2 border-success">
-                  <AvatarFallback className="bg-success/20 text-success">RN</AvatarFallback>
-                </Avatar>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-sidebar-foreground truncate">Nurse Jane</p>
-                  <p className="text-xs text-sidebar-foreground/60 truncate">Ward A</p>
-                </div>
+        {/* User Profile Card */}
+        {sidebarOpen && (
+          <div className="mx-3 mb-3 p-3 rounded-lg bg-sidebar-accent/50 border border-sidebar-border">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center">
+                <Stethoscope className="w-5 h-5 text-primary-foreground" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-sidebar-foreground truncate">Nurse Jane</p>
+                <p className="text-xs text-sidebar-foreground/70">Ward A</p>
               </div>
             </div>
-          )}
-
-          {/* Footer Links */}
-          <div className="p-3 border-t border-sidebar-border space-y-1">
-            <Link to="/nurse/settings" className="flex items-center gap-3 px-3 py-2 rounded-lg text-sidebar-foreground/70 hover:bg-sidebar-accent transition-colors">
-              <Settings className="w-5 h-5" />
-              {sidebarOpen && <span>Settings</span>}
-            </Link>
-            <Link to="/login" className="flex items-center gap-3 px-3 py-2 rounded-lg text-sidebar-foreground/70 hover:bg-sidebar-accent transition-colors">
-              <LogOut className="w-5 h-5" />
-              {sidebarOpen && <span>Logout</span>}
-            </Link>
           </div>
+        )}
+
+        {/* Footer */}
+        <div className="p-3 border-t border-sidebar-border space-y-1">
+          <Link
+            to="/nurse/settings"
+            className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-sidebar-foreground hover:bg-sidebar-accent transition-colors"
+          >
+            <Settings className="w-5 h-5 shrink-0" />
+            {sidebarOpen && <span>Settings</span>}
+          </Link>
+          <Link
+            to="/"
+            className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-sidebar-foreground hover:bg-sidebar-accent transition-colors"
+          >
+            <LogOut className="w-5 h-5 shrink-0" />
+            {sidebarOpen && <span>Logout</span>}
+          </Link>
         </div>
       </aside>
 
       {/* Main Content */}
-      <div className={cn("transition-all duration-300", sidebarOpen ? "ml-64" : "ml-20")}>
+      <div className={cn("flex-1 transition-all duration-300", sidebarOpen ? "ml-64" : "ml-20")}>
         {/* Header */}
-        <header className="sticky top-0 z-30 h-16 bg-background/95 backdrop-blur border-b border-border">
-          <div className="flex h-full items-center justify-between px-6">
-            <div className="flex items-center gap-4">
-              <Button variant="ghost" size="icon" onClick={() => setSidebarOpen(!sidebarOpen)}>
-                {sidebarOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-              </Button>
-              <h1 className="text-xl font-bold font-display">{title}</h1>
+        <header className="sticky top-0 z-40 h-16 bg-background/95 backdrop-blur border-b border-border flex items-center justify-between px-6">
+          <div className="flex items-center gap-4">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="hidden lg:flex"
+              onClick={() => setSidebarOpen(!sidebarOpen)}
+            >
+              <Menu className="w-5 h-5" />
+            </Button>
+            <h1 className="font-display text-xl font-semibold">{title}</h1>
+          </div>
+
+          <div className="flex items-center gap-4">
+            <div className="relative hidden md:block">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <Input
+                placeholder="Search patients..."
+                className="w-64 pl-9 bg-muted/50"
+              />
             </div>
-            <div className="flex items-center gap-4">
-              <div className="relative hidden md:block">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                <Input placeholder="Search patients..." className="w-64 pl-10" />
-              </div>
-              <Button variant="ghost" size="icon" className="relative">
-                <Bell className="w-5 h-5" />
-                <span className="absolute -top-1 -right-1 w-4 h-4 bg-success text-success-foreground text-xs rounded-full flex items-center justify-center">5</span>
-              </Button>
-              <Avatar className="w-9 h-9">
-                <AvatarFallback className="bg-success/10 text-success">RN</AvatarFallback>
-              </Avatar>
+            <Button variant="ghost" size="icon" className="relative">
+              <Bell className="w-5 h-5" />
+              <span className="absolute top-1 right-1 w-2 h-2 bg-destructive rounded-full" />
+            </Button>
+            <div className="w-9 h-9 rounded-full bg-primary flex items-center justify-center text-primary-foreground font-medium text-sm">
+              RN
             </div>
           </div>
         </header>
