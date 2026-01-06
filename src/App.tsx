@@ -53,27 +53,43 @@ import MyAppointments from "./pages/patient/MyAppointments";
 import MyResults from "./pages/patient/MyResults";
 import MyPrescriptions from "./pages/patient/MyPrescriptions";
 import MyBills from "./pages/patient/MyBills";
+import PatientTelemedicine from "./pages/patient/PatientTelemedicine";
+import PatientProfile from "./pages/patient/PatientProfile";
 
 // Management Pages
 import ManagementDashboard from "./pages/management/ManagementDashboard";
 import Revenue from "./pages/management/Revenue";
 import Performance from "./pages/management/Performance";
+import ManagementAnalytics from "./pages/management/ManagementAnalytics";
+import ManagementReports from "./pages/management/ManagementReports";
 
 // IT Pages
 import ITDashboard from "./pages/it/ITDashboard";
 import AuditLogs from "./pages/it/AuditLogs";
+import ITSecurity from "./pages/it/ITSecurity";
+import ITSystemHealth from "./pages/it/ITSystemHealth";
+import ITBackups from "./pages/it/ITBackups";
 
 // CHW Pages
 import CHWDashboard from "./pages/chw/CHWDashboard";
 import FollowUps from "./pages/chw/FollowUps";
 import HomeVisits from "./pages/chw/HomeVisits";
 import MaternalHealth from "./pages/chw/MaternalHealth";
+import CHWReports from "./pages/chw/CHWReports";
 
 // AI Pages
 import AIDashboard from "./pages/ai/AIDashboard";
+import AIAlerts from "./pages/ai/AIAlerts";
+import AITrends from "./pages/ai/AITrends";
+import AIRiskScores from "./pages/ai/AIRiskScores";
+import AIInsights from "./pages/ai/AIInsights";
 
 // Referral Pages
 import ReferralDashboard from "./pages/referral/ReferralDashboard";
+import ReferralList from "./pages/referral/ReferralList";
+import Specialists from "./pages/referral/Specialists";
+import Partners from "./pages/referral/Partners";
+import ExternalResults from "./pages/referral/ExternalResults";
 
 const queryClient = new QueryClient();
 
@@ -133,27 +149,43 @@ const App = () => (
           <Route path="/patient/results" element={<MyResults />} />
           <Route path="/patient/prescriptions" element={<MyPrescriptions />} />
           <Route path="/patient/bills" element={<MyBills />} />
+          <Route path="/patient/telemedicine" element={<PatientTelemedicine />} />
+          <Route path="/patient/profile" element={<PatientProfile />} />
           
           {/* Management Routes */}
           <Route path="/management/dashboard" element={<ManagementDashboard />} />
           <Route path="/management/revenue" element={<Revenue />} />
           <Route path="/management/performance" element={<Performance />} />
+          <Route path="/management/analytics" element={<ManagementAnalytics />} />
+          <Route path="/management/reports" element={<ManagementReports />} />
           
           {/* IT Routes */}
           <Route path="/it/dashboard" element={<ITDashboard />} />
           <Route path="/it/logs" element={<AuditLogs />} />
+          <Route path="/it/security" element={<ITSecurity />} />
+          <Route path="/it/health" element={<ITSystemHealth />} />
+          <Route path="/it/backups" element={<ITBackups />} />
           
           {/* CHW Routes */}
           <Route path="/chw/dashboard" element={<CHWDashboard />} />
           <Route path="/chw/followups" element={<FollowUps />} />
           <Route path="/chw/visits" element={<HomeVisits />} />
           <Route path="/chw/maternal" element={<MaternalHealth />} />
+          <Route path="/chw/reports" element={<CHWReports />} />
           
           {/* AI Routes */}
           <Route path="/ai/dashboard" element={<AIDashboard />} />
+          <Route path="/ai/alerts" element={<AIAlerts />} />
+          <Route path="/ai/trends" element={<AITrends />} />
+          <Route path="/ai/risk" element={<AIRiskScores />} />
+          <Route path="/ai/insights" element={<AIInsights />} />
           
           {/* Referral Routes */}
           <Route path="/referral/dashboard" element={<ReferralDashboard />} />
+          <Route path="/referral/list" element={<ReferralList />} />
+          <Route path="/referral/specialists" element={<Specialists />} />
+          <Route path="/referral/partners" element={<Partners />} />
+          <Route path="/referral/results" element={<ExternalResults />} />
           
           <Route path="*" element={<NotFound />} />
         </Routes>
