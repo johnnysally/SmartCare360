@@ -16,17 +16,16 @@ router.post('/login', async (req, res) => {
   }
 
   try {
-    const result = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
+    const result = await pool.query(
+      'SELECT * FROM users WHERE email = $1',
+      [email]
+    );
     const user = result.rows[0];
 
-    if (!user) {
-      return res.status(401).json({ message: 'Invalid credentials' });
-    }
+    if (!user) return res.status(401).json({ message: 'Invalid credentials' });
 
     const valid = bcrypt.compareSync(password, user.password);
-    if (!valid) {
-      return res.status(401).json({ message: 'Invalid credentials' });
-    }
+    if (!valid) return res.status(401).json({ message: 'Invalid credentials' });
 
     const token = jwt.sign(
       { id: user.id, email: user.email, role: user.role },
@@ -48,7 +47,7 @@ router.post('/login', async (req, res) => {
     });
   } catch (err) {
     console.error('Login Error:', err);
-    res.status(500).json({ message: 'Database error' });
+    res.status(500).json({ message: 'Database error', error: err.message });
   }
 });
 
@@ -86,7 +85,7 @@ router.post('/signup', async (req, res) => {
       email,
       hashedPassword,
       name,
-      'admin',       // default role
+      'admin', // default role
       phone || '',
       facilityName || '',
       facilityType || ''
@@ -101,19 +100,16 @@ router.post('/signup', async (req, res) => {
       { expiresIn: '8h' }
     );
 
-    res.json({
-      token,
-      user
-    });
+    res.json({ token, user });
   } catch (err) {
     console.error('Signup Error:', err);
 
-    // Handle unique email violation (PostgreSQL code 23505)
+    // Handle unique email violation
     if (err.code === '23505') {
       return res.status(400).json({ message: 'Email already exists' });
     }
 
-    res.status(500).json({ message: 'Database error' });
+    res.status(500).json({ message: 'Database error', error: err.message });
   }
 });
 
