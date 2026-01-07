@@ -18,7 +18,12 @@ import {
   Mail,
   MapPin,
   Star,
-  ChevronRight,
+  Stethoscope,
+  FlaskConical,
+  Brain,
+  Building,
+  UserCog,
+  HeartPulse,
 } from "lucide-react";
 
 const features = [
@@ -88,50 +93,13 @@ const testimonials = [
   },
 ];
 
-const pricingPlans = [
-  {
-    name: "Starter",
-    price: "KES 5,000",
-    period: "/month",
-    description: "Perfect for small clinics",
-    features: [
-      "Up to 500 patients",
-      "Basic EMR",
-      "Appointment scheduling",
-      "Email support",
-    ],
-    popular: false,
-  },
-  {
-    name: "Professional",
-    price: "KES 15,000",
-    period: "/month",
-    description: "For growing healthcare facilities",
-    features: [
-      "Unlimited patients",
-      "Full EMR suite",
-      "M-Pesa & NHIF integration",
-      "Pharmacy management",
-      "Priority support",
-      "Custom reports",
-    ],
-    popular: true,
-  },
-  {
-    name: "Enterprise",
-    price: "Custom",
-    period: "",
-    description: "For hospitals & clinic chains",
-    features: [
-      "Multi-location support",
-      "Telemedicine platform",
-      "Advanced analytics",
-      "API access",
-      "Dedicated account manager",
-      "Custom integrations",
-    ],
-    popular: false,
-  },
+const dashboards = [
+  { icon: Building, title: "Admin Portal", desc: "System control & user management", path: "/admin/dashboard", color: "bg-primary/10 text-primary" },
+  { icon: Stethoscope, title: "Doctor Dashboard", desc: "Clinical care & consultations", path: "/doctor/dashboard", color: "bg-info/10 text-info" },
+  { icon: HeartPulse, title: "Nurse Station", desc: "Patient care & vitals", path: "/nurse/dashboard", color: "bg-success/10 text-success" },
+  { icon: FlaskConical, title: "Laboratory", desc: "Test orders & results", path: "/lab/dashboard", color: "bg-warning/10 text-warning" },
+  { icon: Brain, title: "AI Analytics", desc: "Predictive insights", path: "/ai/dashboard", color: "bg-accent/10 text-accent" },
+  { icon: UserCog, title: "Management", desc: "KPIs & reports", path: "/management/dashboard", color: "bg-secondary text-secondary-foreground" },
 ];
 
 const Landing = () => {
@@ -139,82 +107,64 @@ const Landing = () => {
     <div className="min-h-screen bg-background">
       {/* Navigation */}
       <nav className="fixed top-0 left-0 right-0 z-50 glass">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
+        <div className="container mx-auto px-4 py-3 sm:py-4 flex items-center justify-between">
           <Link to="/" className="flex items-center gap-2">
-            <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center">
-              <Heart className="w-6 h-6 text-primary-foreground" />
+            <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-primary flex items-center justify-center">
+              <Heart className="w-5 h-5 sm:w-6 sm:h-6 text-primary-foreground" />
             </div>
-            <span className="font-display text-xl font-bold">SmartCare360</span>
+            <span className="font-display text-lg sm:text-xl font-bold">SmartCare360</span>
           </Link>
 
-          <div className="hidden md:flex items-center gap-8">
-            <a href="#features" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
-              Features
-            </a>
-            <a href="#pricing" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
-              Pricing
-            </a>
-            <a href="#testimonials" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
-              Testimonials
-            </a>
-            <a href="#contact" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
-              Contact
-            </a>
+          <div className="hidden md:flex items-center gap-6 lg:gap-8">
+            <a href="#features" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Features</a>
+            <a href="#dashboards" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Portals</a>
+            <a href="#testimonials" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Testimonials</a>
+            <a href="#contact" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Contact</a>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3">
             <Link to="/login">
-              <Button variant="ghost" size="sm">
-                Sign In
-              </Button>
+              <Button variant="ghost" size="sm" className="text-xs sm:text-sm">Sign In</Button>
             </Link>
             <Link to="/signup">
-              <Button size="sm" className="btn-gradient">
-                Get Started
-              </Button>
+              <Button size="sm" className="btn-gradient text-xs sm:text-sm">Get Started</Button>
             </Link>
           </div>
         </div>
       </nav>
 
       {/* Hero Section */}
-      <section className="relative pt-32 pb-20 overflow-hidden">
+      <section className="relative pt-24 sm:pt-32 pb-16 sm:pb-20 overflow-hidden">
         <div className="absolute inset-0 bg-hero-pattern opacity-50" />
-        <div 
-          className="absolute top-0 right-0 w-[600px] h-[600px] rounded-full opacity-20 blur-3xl"
-          style={{ background: "var(--gradient-primary)" }}
-        />
-        <div 
-          className="absolute bottom-0 left-0 w-[400px] h-[400px] rounded-full opacity-10 blur-3xl"
-          style={{ background: "var(--gradient-secondary)" }}
-        />
+        <div className="absolute top-0 right-0 w-[300px] sm:w-[600px] h-[300px] sm:h-[600px] rounded-full opacity-20 blur-3xl" style={{ background: "var(--gradient-primary)" }} />
+        <div className="absolute bottom-0 left-0 w-[200px] sm:w-[400px] h-[200px] sm:h-[400px] rounded-full opacity-10 blur-3xl" style={{ background: "var(--gradient-secondary)" }} />
         
         <div className="container mx-auto px-4 relative">
           <div className="max-w-3xl mx-auto text-center stagger-children">
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary text-sm font-medium mb-6">
-              <Zap className="w-4 h-4" />
+            <div className="inline-flex items-center gap-2 px-3 sm:px-4 py-2 rounded-full bg-primary/10 text-primary text-xs sm:text-sm font-medium mb-4 sm:mb-6">
+              <Zap className="w-3 h-3 sm:w-4 sm:h-4" />
               Transforming Healthcare in Kenya
             </div>
             
-            <h1 className="font-display text-4xl md:text-6xl font-bold mb-6 leading-tight">
+            <h1 className="font-display text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold mb-4 sm:mb-6 leading-tight">
               Modern Healthcare
               <span className="text-gradient"> Management</span>
               <br />Made Simple
             </h1>
             
-            <p className="text-lg text-muted-foreground mb-8 max-w-2xl mx-auto">
+            <p className="text-base sm:text-lg text-muted-foreground mb-6 sm:mb-8 max-w-2xl mx-auto px-4">
               SmartCare360 streamlines your clinic operations with powerful EMR, 
               seamless payments, and intelligent analytics—all in one platform.
             </p>
             
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4">
               <Link to="/signup">
-                <Button size="lg" className="btn-gradient gap-2">
+                <Button size="lg" className="btn-gradient gap-2 w-full sm:w-auto">
                   Start Free Trial
                   <ArrowRight className="w-4 h-4" />
                 </Button>
               </Link>
-              <Button size="lg" variant="outline" className="gap-2">
+              <Button size="lg" variant="outline" className="gap-2 w-full sm:w-auto">
                 <Video className="w-4 h-4" />
                 Watch Demo
               </Button>
@@ -222,16 +172,11 @@ const Landing = () => {
           </div>
 
           {/* Stats */}
-          <div className="mt-20 grid grid-cols-2 md:grid-cols-4 gap-6">
+          <div className="mt-12 sm:mt-20 grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-6">
             {stats.map((stat, index) => (
-              <div
-                key={index}
-                className="text-center p-6 rounded-2xl bg-card border border-border card-hover"
-              >
-                <div className="font-display text-3xl md:text-4xl font-bold text-primary mb-1">
-                  {stat.value}
-                </div>
-                <div className="text-sm text-muted-foreground">{stat.label}</div>
+              <div key={index} className="text-center p-4 sm:p-6 rounded-2xl bg-card border border-border card-hover">
+                <div className="font-display text-2xl sm:text-3xl md:text-4xl font-bold text-primary mb-1">{stat.value}</div>
+                <div className="text-xs sm:text-sm text-muted-foreground">{stat.label}</div>
               </div>
             ))}
           </div>
@@ -239,26 +184,26 @@ const Landing = () => {
       </section>
 
       {/* Features Section */}
-      <section id="features" className="py-20 bg-muted/50">
+      <section id="features" className="py-16 sm:py-20 bg-muted/50">
         <div className="container mx-auto px-4">
-          <div className="text-center mb-16">
-            <h2 className="font-display text-3xl md:text-4xl font-bold mb-4">
+          <div className="text-center mb-12 sm:mb-16">
+            <h2 className="font-display text-2xl sm:text-3xl md:text-4xl font-bold mb-4">
               Everything You Need to Run Your Clinic
             </h2>
-            <p className="text-muted-foreground max-w-2xl mx-auto">
+            <p className="text-muted-foreground max-w-2xl mx-auto text-sm sm:text-base">
               A comprehensive suite of tools designed specifically for healthcare providers in Kenya.
             </p>
           </div>
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
             {features.map((feature, index) => (
               <Card key={index} className="card-hover border-border/50 bg-card">
-                <CardContent className="p-6">
-                  <div className={`w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center mb-4 ${feature.color}`}>
-                    <feature.icon className="w-6 h-6" />
+                <CardContent className="p-4 sm:p-6">
+                  <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-primary/10 flex items-center justify-center mb-4 ${feature.color}`}>
+                    <feature.icon className="w-5 h-5 sm:w-6 sm:h-6" />
                   </div>
-                  <h3 className="font-display text-xl font-semibold mb-2">{feature.title}</h3>
-                  <p className="text-muted-foreground">{feature.description}</p>
+                  <h3 className="font-display text-lg sm:text-xl font-semibold mb-2">{feature.title}</h3>
+                  <p className="text-sm text-muted-foreground">{feature.description}</p>
                 </CardContent>
               </Card>
             ))}
@@ -266,24 +211,64 @@ const Landing = () => {
         </div>
       </section>
 
-      {/* Security Section */}
-      <section className="py-20">
+      {/* Dashboards Section */}
+      <section id="dashboards" className="py-16 sm:py-20">
         <div className="container mx-auto px-4">
-          <div className="grid lg:grid-cols-2 gap-12 items-center">
+          <div className="text-center mb-12 sm:mb-16">
+            <h2 className="font-display text-2xl sm:text-3xl md:text-4xl font-bold mb-4">
+              Role-Based Dashboards
+            </h2>
+            <p className="text-muted-foreground max-w-2xl mx-auto text-sm sm:text-base">
+              Specialized interfaces for every role in your healthcare facility—from administrators to community health workers.
+            </p>
+          </div>
+
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 max-w-5xl mx-auto">
+            {dashboards.map((dashboard, index) => (
+              <Link key={index} to={dashboard.path}>
+                <Card className="card-hover border-border/50 bg-card h-full">
+                  <CardContent className="p-4 sm:p-6">
+                    <div className={`w-12 h-12 sm:w-14 sm:h-14 rounded-xl flex items-center justify-center mb-4 ${dashboard.color}`}>
+                      <dashboard.icon className="w-6 h-6 sm:w-7 sm:h-7" />
+                    </div>
+                    <h3 className="font-display text-lg font-semibold mb-1">{dashboard.title}</h3>
+                    <p className="text-sm text-muted-foreground">{dashboard.desc}</p>
+                  </CardContent>
+                </Card>
+              </Link>
+            ))}
+          </div>
+
+          <div className="text-center mt-8">
+            <p className="text-sm text-muted-foreground mb-4">Plus 7 more specialized portals for complete healthcare management</p>
+            <Link to="/login">
+              <Button variant="outline" className="gap-2">
+                Explore All Portals
+                <ArrowRight className="w-4 h-4" />
+              </Button>
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* Security Section */}
+      <section className="py-16 sm:py-20 bg-muted/50">
+        <div className="container mx-auto px-4">
+          <div className="grid lg:grid-cols-2 gap-8 sm:gap-12 items-center">
             <div>
-              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-success/10 text-success text-sm font-medium mb-6">
-                <Shield className="w-4 h-4" />
+              <div className="inline-flex items-center gap-2 px-3 sm:px-4 py-2 rounded-full bg-success/10 text-success text-xs sm:text-sm font-medium mb-4 sm:mb-6">
+                <Shield className="w-3 h-3 sm:w-4 sm:h-4" />
                 Enterprise-Grade Security
               </div>
-              <h2 className="font-display text-3xl md:text-4xl font-bold mb-6">
+              <h2 className="font-display text-2xl sm:text-3xl md:text-4xl font-bold mb-4 sm:mb-6">
                 Your Data is Safe With Us
               </h2>
-              <p className="text-muted-foreground mb-8">
+              <p className="text-muted-foreground mb-6 sm:mb-8 text-sm sm:text-base">
                 We take healthcare data security seriously. SmartCare360 is built with 
                 industry-leading security practices to keep your patient data protected.
               </p>
               
-              <div className="space-y-4">
+              <div className="space-y-3 sm:space-y-4">
                 {[
                   "End-to-end TLS and AES-256 encryption",
                   "Role-based access control (RBAC)",
@@ -291,10 +276,10 @@ const Landing = () => {
                   "Compliant with Kenya Data Protection Act",
                 ].map((item, index) => (
                   <div key={index} className="flex items-center gap-3">
-                    <div className="w-6 h-6 rounded-full bg-success/10 flex items-center justify-center">
-                      <Check className="w-4 h-4 text-success" />
+                    <div className="w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-success/10 flex items-center justify-center flex-shrink-0">
+                      <Check className="w-3 h-3 sm:w-4 sm:h-4 text-success" />
                     </div>
-                    <span className="text-sm">{item}</span>
+                    <span className="text-sm sm:text-base">{item}</span>
                   </div>
                 ))}
               </div>
@@ -302,8 +287,8 @@ const Landing = () => {
             
             <div className="relative">
               <div className="aspect-square rounded-3xl bg-gradient-to-br from-primary/10 to-secondary/10 flex items-center justify-center">
-                <div className="w-32 h-32 rounded-full bg-primary/20 flex items-center justify-center animate-pulse-glow">
-                  <Shield className="w-16 h-16 text-primary" />
+                <div className="w-24 h-24 sm:w-32 sm:h-32 rounded-full bg-primary/20 flex items-center justify-center animate-pulse-glow">
+                  <Shield className="w-12 h-12 sm:w-16 sm:h-16 text-primary" />
                 </div>
               </div>
             </div>
@@ -312,94 +297,36 @@ const Landing = () => {
       </section>
 
       {/* Testimonials Section */}
-      <section id="testimonials" className="py-20 bg-muted/50">
+      <section id="testimonials" className="py-16 sm:py-20">
         <div className="container mx-auto px-4">
-          <div className="text-center mb-16">
-            <h2 className="font-display text-3xl md:text-4xl font-bold mb-4">
+          <div className="text-center mb-12 sm:mb-16">
+            <h2 className="font-display text-2xl sm:text-3xl md:text-4xl font-bold mb-4">
               Trusted by Healthcare Leaders
             </h2>
-            <p className="text-muted-foreground max-w-2xl mx-auto">
+            <p className="text-muted-foreground max-w-2xl mx-auto text-sm sm:text-base">
               See what medical professionals across Kenya are saying about SmartCare360.
             </p>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-6">
+          <div className="grid md:grid-cols-3 gap-4 sm:gap-6">
             {testimonials.map((testimonial, index) => (
               <Card key={index} className="card-hover border-border/50 bg-card">
-                <CardContent className="p-6">
+                <CardContent className="p-4 sm:p-6">
                   <div className="flex gap-1 mb-4">
                     {[...Array(5)].map((_, i) => (
-                      <Star key={i} className="w-4 h-4 fill-warning text-warning" />
+                      <Star key={i} className="w-3 h-3 sm:w-4 sm:h-4 fill-warning text-warning" />
                     ))}
                   </div>
-                  <p className="text-foreground mb-6 italic">"{testimonial.quote}"</p>
+                  <p className="text-foreground mb-4 sm:mb-6 italic text-sm sm:text-base">"{testimonial.quote}"</p>
                   <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center text-primary font-semibold">
+                    <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-primary/10 flex items-center justify-center text-primary font-semibold text-sm sm:text-base">
                       {testimonial.avatar}
                     </div>
                     <div>
-                      <div className="font-semibold">{testimonial.author}</div>
-                      <div className="text-sm text-muted-foreground">{testimonial.role}</div>
+                      <div className="font-semibold text-sm sm:text-base">{testimonial.author}</div>
+                      <div className="text-xs sm:text-sm text-muted-foreground">{testimonial.role}</div>
                     </div>
                   </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Pricing Section */}
-      <section id="pricing" className="py-20">
-        <div className="container mx-auto px-4">
-          <div className="text-center mb-16">
-            <h2 className="font-display text-3xl md:text-4xl font-bold mb-4">
-              Simple, Transparent Pricing
-            </h2>
-            <p className="text-muted-foreground max-w-2xl mx-auto">
-              Choose the plan that fits your facility's needs. All plans include core features.
-            </p>
-          </div>
-
-          <div className="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto">
-            {pricingPlans.map((plan, index) => (
-              <Card
-                key={index}
-                className={`relative card-hover ${
-                  plan.popular
-                    ? "border-primary shadow-lg scale-105"
-                    : "border-border/50"
-                }`}
-              >
-                {plan.popular && (
-                  <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-4 py-1 rounded-full bg-primary text-primary-foreground text-sm font-medium">
-                    Most Popular
-                  </div>
-                )}
-                <CardContent className="p-6">
-                  <h3 className="font-display text-xl font-semibold mb-2">{plan.name}</h3>
-                  <p className="text-sm text-muted-foreground mb-4">{plan.description}</p>
-                  <div className="mb-6">
-                    <span className="font-display text-4xl font-bold">{plan.price}</span>
-                    <span className="text-muted-foreground">{plan.period}</span>
-                  </div>
-                  
-                  <ul className="space-y-3 mb-6">
-                    {plan.features.map((feature, i) => (
-                      <li key={i} className="flex items-center gap-2 text-sm">
-                        <Check className="w-4 h-4 text-success" />
-                        {feature}
-                      </li>
-                    ))}
-                  </ul>
-                  
-                  <Button
-                    className={`w-full ${plan.popular ? "btn-gradient" : ""}`}
-                    variant={plan.popular ? "default" : "outline"}
-                  >
-                    Get Started
-                    <ChevronRight className="w-4 h-4 ml-1" />
-                  </Button>
                 </CardContent>
               </Card>
             ))}
@@ -408,28 +335,25 @@ const Landing = () => {
       </section>
 
       {/* CTA Section */}
-      <section className="py-20">
+      <section className="py-16 sm:py-20">
         <div className="container mx-auto px-4">
-          <div 
-            className="relative rounded-3xl p-12 md:p-20 overflow-hidden"
-            style={{ background: "var(--gradient-hero)" }}
-          >
+          <div className="relative rounded-2xl sm:rounded-3xl p-8 sm:p-12 md:p-20 overflow-hidden" style={{ background: "var(--gradient-hero)" }}>
             <div className="absolute inset-0 bg-hero-pattern opacity-10" />
             <div className="relative text-center max-w-2xl mx-auto">
-              <h2 className="font-display text-3xl md:text-4xl font-bold text-white mb-4">
+              <h2 className="font-display text-2xl sm:text-3xl md:text-4xl font-bold text-white mb-4">
                 Ready to Transform Your Healthcare Practice?
               </h2>
-              <p className="text-white/80 mb-8">
+              <p className="text-white/80 mb-6 sm:mb-8 text-sm sm:text-base">
                 Join hundreds of clinics already using SmartCare360 to deliver better patient care.
               </p>
-              <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+              <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4">
                 <Link to="/signup">
-                  <Button size="lg" className="bg-white text-foreground hover:bg-white/90 gap-2">
+                  <Button size="lg" className="bg-white text-foreground hover:bg-white/90 gap-2 w-full sm:w-auto">
                     Start Free Trial
                     <ArrowRight className="w-4 h-4" />
                   </Button>
                 </Link>
-                <Button size="lg" variant="outline" className="border-white/20 text-white hover:bg-white/10">
+                <Button size="lg" variant="outline" className="border-white/20 text-white hover:bg-white/10 w-full sm:w-auto">
                   Contact Sales
                 </Button>
               </div>
@@ -439,94 +363,73 @@ const Landing = () => {
       </section>
 
       {/* Contact Section */}
-      <section id="contact" className="py-20 bg-muted/50">
+      <section id="contact" className="py-16 sm:py-20 bg-muted/50">
         <div className="container mx-auto px-4">
-          <div className="grid md:grid-cols-2 gap-12">
+          <div className="grid md:grid-cols-2 gap-8 sm:gap-12">
             <div>
-              <h2 className="font-display text-3xl font-bold mb-4">Get in Touch</h2>
-              <p className="text-muted-foreground mb-8">
+              <h2 className="font-display text-2xl sm:text-3xl font-bold mb-4">Get in Touch</h2>
+              <p className="text-muted-foreground mb-6 sm:mb-8 text-sm sm:text-base">
                 Have questions? Our team is here to help you find the right solution for your healthcare facility.
               </p>
               
               <div className="space-y-4">
                 <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
-                    <Phone className="w-5 h-5 text-primary" />
+                  <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
+                    <Phone className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
                   </div>
                   <div>
-                    <div className="text-sm text-muted-foreground">Phone</div>
-                    <div className="font-medium">+254 700 000 000</div>
+                    <div className="text-xs sm:text-sm text-muted-foreground">Phone</div>
+                    <div className="font-medium text-sm sm:text-base">+254 700 000 000</div>
                   </div>
                 </div>
                 <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
-                    <Mail className="w-5 h-5 text-primary" />
+                  <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
+                    <Mail className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
                   </div>
                   <div>
-                    <div className="text-sm text-muted-foreground">Email</div>
-                    <div className="font-medium">hello@smartcare360.co.ke</div>
+                    <div className="text-xs sm:text-sm text-muted-foreground">Email</div>
+                    <div className="font-medium text-sm sm:text-base">hello@smartcare360.co.ke</div>
                   </div>
                 </div>
                 <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
-                    <MapPin className="w-5 h-5 text-primary" />
+                  <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
+                    <MapPin className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
                   </div>
                   <div>
-                    <div className="text-sm text-muted-foreground">Office</div>
-                    <div className="font-medium">Westlands, Nairobi, Kenya</div>
+                    <div className="text-xs sm:text-sm text-muted-foreground">Office</div>
+                    <div className="font-medium text-sm sm:text-base">Westlands, Nairobi, Kenya</div>
                   </div>
                 </div>
               </div>
             </div>
-            
+
             <Card className="border-border/50">
-              <CardContent className="p-6">
+              <CardContent className="p-4 sm:p-6">
+                <h3 className="font-display text-lg sm:text-xl font-semibold mb-4">Send us a message</h3>
                 <form className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="text-sm font-medium mb-2 block">First Name</label>
-                      <input
-                        type="text"
-                        className="w-full px-4 py-2 rounded-lg border border-input bg-background focus:outline-none focus:ring-2 focus:ring-ring"
-                        placeholder="John"
-                      />
+                  <div className="grid sm:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">First Name</label>
+                      <input className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm" placeholder="John" />
                     </div>
-                    <div>
-                      <label className="text-sm font-medium mb-2 block">Last Name</label>
-                      <input
-                        type="text"
-                        className="w-full px-4 py-2 rounded-lg border border-input bg-background focus:outline-none focus:ring-2 focus:ring-ring"
-                        placeholder="Doe"
-                      />
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">Last Name</label>
+                      <input className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm" placeholder="Doe" />
                     </div>
                   </div>
-                  <div>
-                    <label className="text-sm font-medium mb-2 block">Email</label>
-                    <input
-                      type="email"
-                      className="w-full px-4 py-2 rounded-lg border border-input bg-background focus:outline-none focus:ring-2 focus:ring-ring"
-                      placeholder="john@clinic.co.ke"
-                    />
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Email</label>
+                    <input className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm" type="email" placeholder="john@example.com" />
                   </div>
-                  <div>
-                    <label className="text-sm font-medium mb-2 block">Facility Name</label>
-                    <input
-                      type="text"
-                      className="w-full px-4 py-2 rounded-lg border border-input bg-background focus:outline-none focus:ring-2 focus:ring-ring"
-                      placeholder="Your Clinic Name"
-                    />
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Facility Name</label>
+                    <input className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm" placeholder="Your clinic or hospital" />
                   </div>
-                  <div>
-                    <label className="text-sm font-medium mb-2 block">Message</label>
-                    <textarea
-                      className="w-full px-4 py-2 rounded-lg border border-input bg-background focus:outline-none focus:ring-2 focus:ring-ring min-h-[100px]"
-                      placeholder="Tell us about your needs..."
-                    />
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Message</label>
+                    <textarea className="w-full px-3 py-2 rounded-lg border border-border bg-background min-h-[100px] text-sm" placeholder="Tell us about your needs..." />
                   </div>
-                  <Button className="w-full btn-gradient">
-                    Send Message
-                    <ArrowRight className="w-4 h-4 ml-2" />
-                  </Button>
+                  <Button className="w-full btn-gradient">Send Message</Button>
                 </form>
               </CardContent>
             </Card>
@@ -535,58 +438,21 @@ const Landing = () => {
       </section>
 
       {/* Footer */}
-      <footer className="py-12 border-t border-border">
+      <footer className="py-8 sm:py-12 border-t border-border">
         <div className="container mx-auto px-4">
-          <div className="grid md:grid-cols-4 gap-8 mb-8">
-            <div>
-              <Link to="/" className="flex items-center gap-2 mb-4">
-                <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center">
-                  <Heart className="w-6 h-6 text-primary-foreground" />
-                </div>
-                <span className="font-display text-xl font-bold">SmartCare360</span>
-              </Link>
-              <p className="text-sm text-muted-foreground">
-                Transforming healthcare management across Kenya with modern, intuitive technology.
-              </p>
+          <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-xl bg-primary flex items-center justify-center">
+                <Heart className="w-5 h-5 text-primary-foreground" />
+              </div>
+              <span className="font-display font-bold">SmartCare360</span>
             </div>
-            
-            <div>
-              <h4 className="font-semibold mb-4">Product</h4>
-              <ul className="space-y-2 text-sm text-muted-foreground">
-                <li><a href="#features" className="hover:text-foreground">Features</a></li>
-                <li><a href="#pricing" className="hover:text-foreground">Pricing</a></li>
-                <li><a href="#" className="hover:text-foreground">Security</a></li>
-                <li><a href="#" className="hover:text-foreground">Updates</a></li>
-              </ul>
-            </div>
-            
-            <div>
-              <h4 className="font-semibold mb-4">Company</h4>
-              <ul className="space-y-2 text-sm text-muted-foreground">
-                <li><a href="#" className="hover:text-foreground">About</a></li>
-                <li><a href="#" className="hover:text-foreground">Careers</a></li>
-                <li><a href="#contact" className="hover:text-foreground">Contact</a></li>
-                <li><a href="#" className="hover:text-foreground">Partners</a></li>
-              </ul>
-            </div>
-            
-            <div>
-              <h4 className="font-semibold mb-4">Legal</h4>
-              <ul className="space-y-2 text-sm text-muted-foreground">
-                <li><a href="#" className="hover:text-foreground">Privacy Policy</a></li>
-                <li><a href="#" className="hover:text-foreground">Terms of Service</a></li>
-                <li><a href="#" className="hover:text-foreground">Data Protection</a></li>
-              </ul>
-            </div>
-          </div>
-          
-          <div className="pt-8 border-t border-border flex flex-col md:flex-row items-center justify-between gap-4">
-            <p className="text-sm text-muted-foreground">
-              © 2026 SmartCare360. All rights reserved.
+            <p className="text-xs sm:text-sm text-muted-foreground text-center">
+              © 2026 SmartCare360. All rights reserved. Made with ❤️ in Kenya.
             </p>
-            <div className="flex items-center gap-4">
-              <Activity className="w-5 h-5 text-muted-foreground" />
-              <span className="text-sm text-muted-foreground">System Status: All Systems Operational</span>
+            <div className="flex items-center gap-4 sm:gap-6">
+              <a href="#" className="text-xs sm:text-sm text-muted-foreground hover:text-foreground transition-colors">Privacy</a>
+              <a href="#" className="text-xs sm:text-sm text-muted-foreground hover:text-foreground transition-colors">Terms</a>
             </div>
           </div>
         </div>

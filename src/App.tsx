@@ -69,6 +69,10 @@ import AuditLogs from "./pages/it/AuditLogs";
 import ITSecurity from "./pages/it/ITSecurity";
 import ITSystemHealth from "./pages/it/ITSystemHealth";
 import ITBackups from "./pages/it/ITBackups";
+import ITSettings from "./pages/it/ITSettings";
+
+// Admin Settings
+import AdminSettings from "./pages/admin/AdminSettings";
 
 // CHW Pages
 import CHWDashboard from "./pages/chw/CHWDashboard";
@@ -128,6 +132,7 @@ const App = () => (
           <Route path="/admin/logs" element={<SystemLogs />} />
           <Route path="/admin/reports" element={<Reports />} />
           <Route path="/admin/roles" element={<RolesPermissions />} />
+          <Route path="/admin/settings" element={<AdminSettings />} />
           
           {/* Lab Routes */}
           <Route path="/lab/dashboard" element={<LabDashboard />} />
@@ -165,6 +170,7 @@ const App = () => (
           <Route path="/it/security" element={<ITSecurity />} />
           <Route path="/it/health" element={<ITSystemHealth />} />
           <Route path="/it/backups" element={<ITBackups />} />
+          <Route path="/it/settings" element={<ITSettings />} />
           
           {/* CHW Routes */}
           <Route path="/chw/dashboard" element={<CHWDashboard />} />
