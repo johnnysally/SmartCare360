@@ -1,0 +1,13 @@
+[build]
+  command = "npm run build"
+  publish = "dist"
+
+# Note: Do NOT commit secrets. Configure the production API URL in Netlify
+# UI: Settings > Build & deploy > Environment > Environment variables
+# Example (set this in Netlify, do NOT store here):
+# VITE_API_URL = "https://smartcare360-jyho.onrender.com"
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200

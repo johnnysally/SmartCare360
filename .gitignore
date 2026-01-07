@@ -1,3 +1,22 @@
+# Node
+node_modules/
+
+# Build
+dist/
+
+# Environment files (ignore all env files but keep examples)
+*.env
+*.env.*
+!*.env.example
+
+# Backend env overrides
+backend/.env
+backend/.env.*
+!backend/.env.example
+
+# Local overrides
+.env.local
+backend/.env.local
 # Logs
 logs
 *.log

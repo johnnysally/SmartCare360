@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Heart, User, Mail, Lock, Building, Phone, Eye, EyeOff, ArrowRight, Check } from "lucide-react";
+import { User, Mail, Lock, Building, Phone, Eye, EyeOff, ArrowRight, Check } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 const facilityTypes = [
@@ -114,7 +114,7 @@ const Signup = () => {
           <div className="lg:hidden mb-8 text-center">
             <Link to="/" className="inline-flex items-center gap-2">
               <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center">
-                <Heart className="w-6 h-6 text-primary-foreground" />
+                <img src="/images/SmartCare360%20logo%20design.png" alt="SmartCare360" className="w-6 h-6" />
               </div>
               <span className="font-display text-xl font-bold">SmartCare360</span>
             </Link>
@@ -340,7 +340,7 @@ const Signup = () => {
         <div className="relative z-10 flex flex-col justify-center p-12">
           <Link to="/" className="flex items-center gap-3 mb-12">
             <div className="w-12 h-12 rounded-xl bg-white/10 backdrop-blur flex items-center justify-center">
-              <Heart className="w-7 h-7 text-white" />
+              <img src="/images/SmartCare360%20logo%20design.png" alt="SmartCare360" className="w-7 h-7" />
             </div>
             <span className="font-display text-2xl font-bold text-white">SmartCare360</span>
           </Link>

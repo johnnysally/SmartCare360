@@ -71,3 +71,15 @@ Yes, you can!
 To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
 
 Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+
+## Deploy frontend to Netlify
+
+1. In your Netlify dashboard, create a new site and connect your Git repository.
+2. In Site settings -> Build & deploy -> Environment, add an environment variable:
+	- `VITE_API_URL` = `https://smartcare360-jyho.onrender.com` (or your backend URL)
+3. Netlify build settings (auto-detected from `netlify.toml`):
+	- Build command: `npm run build`
+	- Publish directory: `dist`
+4. (Optional) Use the `public/_redirects` or `netlify.toml` redirects to enable client-side routing.
+
+After deploy, open the site URL provided by Netlify. If you see stale assets, try clearing the cache or redeploy.
