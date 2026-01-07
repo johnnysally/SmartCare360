@@ -21,6 +21,11 @@ const JWT_SECRET = process.env.JWT_SECRET || 'dev_secret';
     const authRoutes = require('./routes/auth');
     const patientsRoutes = require('./routes/patients');
     const appointmentsRoutes = require('./routes/appointments');
+    const queueRoutes = require('./routes/queue');
+    const billingRoutes = require('./routes/billing');
+    const pharmacyRoutes = require('./routes/pharmacy');
+    const telemedicineRoutes = require('./routes/telemedicine');
+    const referralsRoutes = require('./routes/referrals');
     const newsletterRoutes = require('./routes/newsletter');
     const usersRoutes = require('./routes/users');
 
@@ -49,6 +54,11 @@ const JWT_SECRET = process.env.JWT_SECRET || 'dev_secret';
     // Protected routes
     app.use('/patients', requireAuth, patientsRoutes);
     app.use('/appointments', requireAuth, appointmentsRoutes);
+    app.use('/queue', requireAuth, queueRoutes);
+    app.use('/billing', requireAuth, billingRoutes);
+    app.use('/pharmacy', requireAuth, pharmacyRoutes);
+    app.use('/telemedicine', requireAuth, telemedicineRoutes);
+    app.use('/referrals', requireAuth, referralsRoutes);
     app.use('/users', requireAuth, usersRoutes);
 
     app.listen(PORT, () => console.log(`SmartCare360 backend running on http://localhost:${PORT}`));

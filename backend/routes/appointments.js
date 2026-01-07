@@ -5,9 +5,9 @@ const dbModule = require('../db');
 router.get('/', (req, res) => {
   const db = dbModule.db;
   if (!db) return res.status(500).json({ message: 'DB not initialized' });
-  db.all('SELECT * FROM appointments', (err, rows) => {
+  db.all('SELECT * FROM appointments', [], (err, rows) => {
     if (err) return res.status(500).json({ message: 'DB error' });
-    res.json(rows);
+    res.json(rows || []);
   });
 });
 

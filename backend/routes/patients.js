@@ -6,9 +6,9 @@ const { v4: uuidv4 } = require('uuid');
 router.get('/', (req, res) => {
   const db = dbModule.db;
   if (!db) return res.status(500).json({ message: 'DB not initialized' });
-  db.all('SELECT * FROM patients', (err, rows) => {
+  db.all('SELECT * FROM patients', [], (err, rows) => {
     if (err) return res.status(500).json({ message: 'DB error' });
-    res.json(rows);
+    res.json(rows || []);
   });
 });
 
