@@ -1,6 +1,7 @@
+// routes/auth.js
 const express = require('express');
 const router = express.Router();
-const pool = require('../db'); // PostgreSQL pool
+const { pool } = require('../db'); // <-- fixed
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { v4: uuidv4 } = require('uuid');
@@ -11,15 +12,10 @@ const JWT_SECRET = process.env.JWT_SECRET || 'dev_secret';
 router.post('/login', async (req, res) => {
   const { email, password } = req.body;
 
-  if (!email || !password) {
-    return res.status(400).json({ message: 'Email and password required' });
-  }
+  if (!email || !password) return res.status(400).json({ message: 'Email and password required' });
 
   try {
-    const result = await pool.query(
-      'SELECT * FROM users WHERE email = $1',
-      [email]
-    );
+    const result = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
     const user = result.rows[0];
 
     if (!user) return res.status(401).json({ message: 'Invalid credentials' });
@@ -27,11 +23,7 @@ router.post('/login', async (req, res) => {
     const valid = bcrypt.compareSync(password, user.password);
     if (!valid) return res.status(401).json({ message: 'Invalid credentials' });
 
-    const token = jwt.sign(
-      { id: user.id, email: user.email, role: user.role },
-      JWT_SECRET,
-      { expiresIn: '8h' }
-    );
+    const token = jwt.sign({ id: user.id, email: user.email, role: user.role }, JWT_SECRET, { expiresIn: '8h' });
 
     res.json({
       token,
@@ -47,25 +39,16 @@ router.post('/login', async (req, res) => {
     });
   } catch (err) {
     console.error('Login Error:', err);
-    res.status(500).json({ message: 'Database error', error: err.message });
+    res.status(500).json({ message: 'Database error' });
   }
 });
 
 /* ===================== SIGNUP ===================== */
 router.post('/signup', async (req, res) => {
-  const {
-    firstName,
-    lastName,
-    email,
-    password,
-    phone,
-    facilityName,
-    facilityType,
-  } = req.body;
+  const { firstName, lastName, email, password, phone, facilityName, facilityType } = req.body;
 
-  if (!email || !password || !firstName) {
+  if (!email || !password || !firstName)
     return res.status(400).json({ message: 'Missing required fields' });
-  }
 
   const name = `${firstName} ${lastName || ''}`.trim();
   const hashedPassword = bcrypt.hashSync(password, 10);
@@ -73,43 +56,25 @@ router.post('/signup', async (req, res) => {
 
   try {
     const insertQuery = `
-      INSERT INTO users (
-        id, email, password, name, role, phone, facility_name, facility_type
-      )
+      INSERT INTO users (id, email, password, name, role, phone, facility_name, facility_type)
       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
       RETURNING id, email, name, role, phone, facility_name, facility_type;
     `;
 
-    const values = [
-      id,
-      email,
-      hashedPassword,
-      name,
-      'admin', // default role
-      phone || '',
-      facilityName || '',
-      facilityType || ''
-    ];
+    const values = [id, email, hashedPassword, name, 'admin', phone || '', facilityName || '', facilityType || ''];
 
     const result = await pool.query(insertQuery, values);
     const user = result.rows[0];
 
-    const token = jwt.sign(
-      { id: user.id, email: user.email, role: user.role },
-      JWT_SECRET,
-      { expiresIn: '8h' }
-    );
+    const token = jwt.sign({ id: user.id, email: user.email, role: user.role }, JWT_SECRET, { expiresIn: '8h' });
 
     res.json({ token, user });
   } catch (err) {
     console.error('Signup Error:', err);
 
-    // Handle unique email violation
-    if (err.code === '23505') {
-      return res.status(400).json({ message: 'Email already exists' });
-    }
+    if (err.code === '23505') return res.status(400).json({ message: 'Email already exists' });
 
-    res.status(500).json({ message: 'Database error', error: err.message });
+    res.status(500).json({ message: 'Database error' });
   }
 });
 
