@@ -51,31 +51,111 @@ const chartConfig = {
   logins: { label: "Logins", color: "hsl(174, 72%, 40%)" },
 };
 
+import { useEffect, useState } from "react";
+import { useToast } from "@/hooks/use-toast";
+import { getPatients, getAppointments } from "@/lib/api";
+
 const AdminDashboard = () => {
+  const [usersCount, setUsersCount] = useState(0);
+  const [patientsCount, setPatientsCount] = useState(0);
+  const [appointmentsCount, setAppointmentsCount] = useState(0);
+  const [health, setHealth] = useState('unknown');
+  const { toast } = useToast();
+
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        const [pats, appts] = await Promise.all([getPatients().catch(() => []), getAppointments().catch(() => [])]);
+        if (mounted) {
+          setPatientsCount((pats || []).length);
+          setAppointmentsCount((appts || []).length);
+        }
+      } catch (err: any) {
+        toast({ title: 'Failed to load admin metrics', description: err?.message || '' });
+      }
+
+      try {
+        const res = await fetch((import.meta.env.VITE_API_URL || 'http://localhost:5000') + '/health');
+        const body = await res.json();
+        if (mounted) setHealth(body?.status || 'unknown');
+      } catch (e) {
+        if (mounted) setHealth('down');
+      }
+
+      try {
+        const token = localStorage.getItem('sc360_token');
+        if (token) {
+          const res = await fetch((import.meta.env.VITE_API_URL || 'http://localhost:5000') + '/users', { headers: { Authorization: `Bearer ${token}` } });
+          if (res.ok) {
+            const users = await res.json();
+            if (mounted) setUsersCount((users || []).length);
+          }
+        }
+      } catch (e) {
+        // ignore
+      }
+    })();
+    return () => { mounted = false; };
+  }, []);
+
   return (
     <AdminLayout title="Admin Dashboard">
       <div className="space-y-6 animate-fade-in">
         {/* Stats Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-          {stats.map((stat) => (
-            <Card key={stat.label} className="border-border/50">
-              <CardContent className="p-4 sm:p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-muted-foreground mb-1">{stat.label}</p>
-                    <p className="text-2xl sm:text-3xl font-bold font-display">{stat.value}</p>
-                    <div className="flex items-center gap-1 mt-2">
-                      <TrendingUp className="w-4 h-4 text-success" />
-                      <span className="text-sm text-success font-medium">{stat.change}</span>
-                    </div>
-                  </div>
-                  <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-muted flex items-center justify-center ${stat.color}`}>
-                    <stat.icon className="w-5 h-5 sm:w-6 sm:h-6" />
-                  </div>
+          <Card className="border-border/50">
+            <CardContent className="p-4 sm:p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-muted-foreground mb-1">Total Users</p>
+                  <p className="text-2xl sm:text-3xl font-bold font-display">{usersCount}</p>
                 </div>
-              </CardContent>
-            </Card>
-          ))}
+                <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-muted flex items-center justify-center text-primary">
+                  <Users className="w-5 h-5 sm:w-6 sm:h-6" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          <Card className="border-border/50">
+            <CardContent className="p-4 sm:p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-muted-foreground mb-1">Total Patients</p>
+                  <p className="text-2xl sm:text-3xl font-bold font-display">{patientsCount}</p>
+                </div>
+                <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-muted flex items-center justify-center text-info">
+                  <UserCog className="w-5 h-5 sm:w-6 sm:h-6" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          <Card className="border-border/50">
+            <CardContent className="p-4 sm:p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-muted-foreground mb-1">Appointments</p>
+                  <p className="text-2xl sm:text-3xl font-bold font-display">{appointmentsCount}</p>
+                </div>
+                <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-muted flex items-center justify-center text-success">
+                  <Activity className="w-5 h-5 sm:w-6 sm:h-6" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          <Card className="border-border/50">
+            <CardContent className="p-4 sm:p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-muted-foreground mb-1">System Health</p>
+                  <p className="text-2xl sm:text-3xl font-bold font-display">{health}</p>
+                </div>
+                <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-muted flex items-center justify-center text-accent">
+                  <Server className="w-5 h-5 sm:w-6 sm:h-6" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         </div>
 
         <div className="grid lg:grid-cols-2 gap-6">

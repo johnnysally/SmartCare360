@@ -1,0 +1,6 @@
+node_modules
+npm-debug.log
+smartcare360.db
+.env
+Dockerfile
+.git

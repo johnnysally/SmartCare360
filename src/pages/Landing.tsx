@@ -1,5 +1,8 @@
 import { Link } from "react-router-dom";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { useToast } from "@/hooks/use-toast";
+import { postNewsletter } from "@/lib/api";
 import { Card, CardContent } from "@/components/ui/card";
 import {
   Activity,
@@ -103,6 +106,42 @@ const dashboards = [
 ];
 
 const Landing = () => {
+  function NewsletterForm() {
+    const [email, setEmail] = useState("");
+    const [loading, setLoading] = useState(false);
+    const { toast } = useToast();
+
+    const handleSubmit = async (e) => {
+      e.preventDefault();
+      if (!email) return toast({ title: 'Please enter an email' });
+      setLoading(true);
+      try {
+        await postNewsletter(email);
+        toast({ title: 'Subscribed', description: 'Check your inbox for a welcome email.' });
+        setEmail("");
+      } catch (err) {
+        toast({ title: 'Subscription failed', description: err?.message || 'Try again later.' });
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    return (
+      <form className="flex gap-2" onSubmit={handleSubmit}>
+        <input
+          type="email"
+          placeholder="Your work email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          className="flex-1 px-3 py-2 rounded-lg border border-border bg-background text-sm"
+          aria-label="Email"
+        />
+        <Button type="submit" className="btn-gradient" disabled={loading}>
+          {loading ? 'Sending...' : 'Start Free'}
+        </Button>
+      </form>
+    );
+  }
   return (
     <div className="min-h-screen bg-background">
       {/* Navigation */}
@@ -438,25 +477,85 @@ const Landing = () => {
       </section>
 
       {/* Footer */}
-      <footer className="py-8 sm:py-12 border-t border-border">
-        <div className="container mx-auto px-4">
-          <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-xl bg-primary flex items-center justify-center">
-                <Heart className="w-5 h-5 text-primary-foreground" />
+      <footer className="bg-surface border-t border-border">
+        <div className="container mx-auto px-4 py-12">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+            <div className="space-y-3">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center">
+                  <Heart className="w-6 h-6 text-primary-foreground" />
+                </div>
+                <div>
+                  <div className="font-display font-bold">SmartCare360</div>
+                  <div className="text-sm text-muted-foreground">Modern healthcare management built for clinics in Africa.</div>
+                </div>
               </div>
-              <span className="font-display font-bold">SmartCare360</span>
+              <div className="flex items-center gap-3 mt-4">
+                <div className="text-sm text-muted-foreground">Trusted by</div>
+                <div className="flex items-center gap-3">
+                  <div className="px-3 py-1 rounded bg-muted text-xs">Nairobi Health</div>
+                  <div className="px-3 py-1 rounded bg-muted text-xs">Kisumu Clinic</div>
+                </div>
+              </div>
             </div>
-            <p className="text-xs sm:text-sm text-muted-foreground text-center">
-              © 2026 SmartCare360. All rights reserved. Made with ❤️ in Kenya.
-            </p>
-            <div className="flex items-center gap-4 sm:gap-6">
-              <a href="#" className="text-xs sm:text-sm text-muted-foreground hover:text-foreground transition-colors">Privacy</a>
-              <a href="#" className="text-xs sm:text-sm text-muted-foreground hover:text-foreground transition-colors">Terms</a>
+
+            <div>
+              <h4 className="font-semibold mb-3">Product</h4>
+              <ul className="text-sm text-muted-foreground space-y-2">
+                <li><a href="#features" className="hover:underline">Features</a></li>
+                <li><a href="/pricing" className="hover:underline">Pricing</a></li>
+                <li><a href="#dashboards" className="hover:underline">Portals</a></li>
+                <li><a href="/telemedicine" className="hover:underline">Telemedicine</a></li>
+              </ul>
+            </div>
+
+            <div>
+              <h4 className="font-semibold mb-3">Resources</h4>
+              <ul className="text-sm text-muted-foreground space-y-2">
+                <li><a href="#testimonials" className="hover:underline">Case Studies</a></li>
+                <li><a href="#contact" className="hover:underline">Contact Sales</a></li>
+                <li><a href="#" className="hover:underline">Docs</a></li>
+                <li><a href="#" className="hover:underline">Support</a></li>
+              </ul>
+            </div>
+
+            <div>
+              <h4 className="font-semibold mb-3">Get started</h4>
+              <p className="text-sm text-muted-foreground mb-3">Start a free 30-day trial — no credit card required.</p>
+              <form
+                className="flex gap-2"
+                onSubmit={async (e) => {
+                  e.preventDefault();
+                }}
+              >
+                <NewsletterForm />
+              </form>
+              <div className="text-xs text-muted-foreground mt-3">Or call <strong>+254 700 000 000</strong> to speak with sales.</div>
+            </div>
+          </div>
+
+          <div className="mt-8 border-t border-border pt-6 flex flex-col md:flex-row items-center justify-between gap-4">
+            <div className="text-sm text-muted-foreground">© 2026 SmartCare360. All rights reserved.</div>
+            <div className="flex items-center gap-4">
+              <a href="#" className="text-sm text-muted-foreground hover:text-foreground">Privacy</a>
+              <a href="#" className="text-sm text-muted-foreground hover:text-foreground">Terms</a>
             </div>
           </div>
         </div>
       </footer>
+
+      {/* Sticky CTA banner */}
+      <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50">
+        <div className="flex items-center gap-4 bg-gradient-to-r from-primary to-secondary text-white px-4 py-3 rounded-xl shadow-lg">
+          <div className="hidden sm:block">
+            <div className="font-semibold">Start delivering better care today</div>
+            <div className="text-sm opacity-90">Free 30-day trial • Onboarding included</div>
+          </div>
+          <Link to="/signup">
+            <Button className="ml-2">Start Free Trial</Button>
+          </Link>
+        </div>
+      </div>
     </div>
   );
 };

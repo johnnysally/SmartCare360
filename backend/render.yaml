@@ -1,0 +1,14 @@
+services:
+  - type: web
+    name: smartcare360-backend
+    env: node
+    plan: free
+    branch: main
+    buildCommand: "cd backend && npm install"
+    startCommand: "cd backend && npm start"
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 5000
+    healthCheckPath: /health

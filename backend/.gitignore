@@ -1,0 +1,5 @@
+node_modules/
+smartcare360.db
+.env
+npm-debug.log
+.DS_Store

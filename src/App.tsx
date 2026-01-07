@@ -14,6 +14,7 @@ import Billing from "./pages/Billing";
 import Pharmacy from "./pages/Pharmacy";
 import Telemedicine from "./pages/Telemedicine";
 import Analytics from "./pages/Analytics";
+import ProtectedRoute from "@/components/ProtectedRoute";
 import NotFound from "./pages/NotFound";
 
 // Doctor Pages
@@ -107,91 +108,91 @@ const App = () => (
           <Route path="/" element={<Landing />} />
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
-          <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/patients" element={<Patients />} />
-          <Route path="/appointments" element={<Appointments />} />
-          <Route path="/queue" element={<Queue />} />
-          <Route path="/billing" element={<Billing />} />
-          <Route path="/pharmacy" element={<Pharmacy />} />
-          <Route path="/telemedicine" element={<Telemedicine />} />
-          <Route path="/analytics" element={<Analytics />} />
+          <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+          <Route path="/patients" element={<ProtectedRoute><Patients /></ProtectedRoute>} />
+          <Route path="/appointments" element={<ProtectedRoute><Appointments /></ProtectedRoute>} />
+          <Route path="/queue" element={<ProtectedRoute><Queue /></ProtectedRoute>} />
+          <Route path="/billing" element={<ProtectedRoute><Billing /></ProtectedRoute>} />
+          <Route path="/pharmacy" element={<ProtectedRoute><Pharmacy /></ProtectedRoute>} />
+          <Route path="/telemedicine" element={<ProtectedRoute><Telemedicine /></ProtectedRoute>} />
+          <Route path="/analytics" element={<ProtectedRoute><Analytics /></ProtectedRoute>} />
           
           {/* Doctor Routes */}
-          <Route path="/doctor/dashboard" element={<DoctorDashboard />} />
-          <Route path="/doctor/consultations" element={<Consultations />} />
-          <Route path="/doctor/prescriptions" element={<Prescriptions />} />
-          <Route path="/doctor/lab-results" element={<LabResults />} />
-          <Route path="/doctor/schedule" element={<Schedule />} />
-          <Route path="/doctor/medical-notes" element={<MedicalNotes />} />
+          <Route path="/doctor/dashboard" element={<ProtectedRoute><DoctorDashboard /></ProtectedRoute>} />
+          <Route path="/doctor/consultations" element={<ProtectedRoute><Consultations /></ProtectedRoute>} />
+          <Route path="/doctor/prescriptions" element={<ProtectedRoute><Prescriptions /></ProtectedRoute>} />
+          <Route path="/doctor/lab-results" element={<ProtectedRoute><LabResults /></ProtectedRoute>} />
+          <Route path="/doctor/schedule" element={<ProtectedRoute><Schedule /></ProtectedRoute>} />
+          <Route path="/doctor/medical-notes" element={<ProtectedRoute><MedicalNotes /></ProtectedRoute>} />
           
           {/* Admin Routes */}
-          <Route path="/admin/dashboard" element={<AdminDashboard />} />
-          <Route path="/admin/users" element={<UserManagement />} />
-          <Route path="/admin/staff" element={<StaffManagement />} />
-          <Route path="/admin/clinic-settings" element={<ClinicSettings />} />
-          <Route path="/admin/logs" element={<SystemLogs />} />
-          <Route path="/admin/reports" element={<Reports />} />
-          <Route path="/admin/roles" element={<RolesPermissions />} />
-          <Route path="/admin/settings" element={<AdminSettings />} />
+          <Route path="/admin/dashboard" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
+          <Route path="/admin/users" element={<ProtectedRoute><UserManagement /></ProtectedRoute>} />
+          <Route path="/admin/staff" element={<ProtectedRoute><StaffManagement /></ProtectedRoute>} />
+          <Route path="/admin/clinic-settings" element={<ProtectedRoute><ClinicSettings /></ProtectedRoute>} />
+          <Route path="/admin/logs" element={<ProtectedRoute><SystemLogs /></ProtectedRoute>} />
+          <Route path="/admin/reports" element={<ProtectedRoute><Reports /></ProtectedRoute>} />
+          <Route path="/admin/roles" element={<ProtectedRoute><RolesPermissions /></ProtectedRoute>} />
+          <Route path="/admin/settings" element={<ProtectedRoute><AdminSettings /></ProtectedRoute>} />
           
           {/* Lab Routes */}
-          <Route path="/lab/dashboard" element={<LabDashboard />} />
-          <Route path="/lab/orders" element={<TestOrders />} />
-          <Route path="/lab/samples" element={<SampleTracking />} />
-          <Route path="/lab/results" element={<ResultsEntry />} />
-          <Route path="/lab/reports" element={<LabReports />} />
+          <Route path="/lab/dashboard" element={<ProtectedRoute><LabDashboard /></ProtectedRoute>} />
+          <Route path="/lab/orders" element={<ProtectedRoute><TestOrders /></ProtectedRoute>} />
+          <Route path="/lab/samples" element={<ProtectedRoute><SampleTracking /></ProtectedRoute>} />
+          <Route path="/lab/results" element={<ProtectedRoute><ResultsEntry /></ProtectedRoute>} />
+          <Route path="/lab/reports" element={<ProtectedRoute><LabReports /></ProtectedRoute>} />
           
           {/* Nurse Routes */}
-          <Route path="/nurse/dashboard" element={<NurseDashboard />} />
-          <Route path="/nurse/vitals" element={<VitalsCapture />} />
-          <Route path="/nurse/medications" element={<Medications />} />
-          <Route path="/nurse/notes" element={<CareNotes />} />
-          <Route path="/nurse/tasks" element={<TaskList />} />
+          <Route path="/nurse/dashboard" element={<ProtectedRoute><NurseDashboard /></ProtectedRoute>} />
+          <Route path="/nurse/vitals" element={<ProtectedRoute><VitalsCapture /></ProtectedRoute>} />
+          <Route path="/nurse/medications" element={<ProtectedRoute><Medications /></ProtectedRoute>} />
+          <Route path="/nurse/notes" element={<ProtectedRoute><CareNotes /></ProtectedRoute>} />
+          <Route path="/nurse/tasks" element={<ProtectedRoute><TaskList /></ProtectedRoute>} />
           
           {/* Patient Routes */}
-          <Route path="/patient/dashboard" element={<PatientDashboard />} />
-          <Route path="/patient/appointments" element={<MyAppointments />} />
-          <Route path="/patient/results" element={<MyResults />} />
-          <Route path="/patient/prescriptions" element={<MyPrescriptions />} />
-          <Route path="/patient/bills" element={<MyBills />} />
-          <Route path="/patient/telemedicine" element={<PatientTelemedicine />} />
-          <Route path="/patient/profile" element={<PatientProfile />} />
+          <Route path="/patient/dashboard" element={<ProtectedRoute><PatientDashboard /></ProtectedRoute>} />
+          <Route path="/patient/appointments" element={<ProtectedRoute><MyAppointments /></ProtectedRoute>} />
+          <Route path="/patient/results" element={<ProtectedRoute><MyResults /></ProtectedRoute>} />
+          <Route path="/patient/prescriptions" element={<ProtectedRoute><MyPrescriptions /></ProtectedRoute>} />
+          <Route path="/patient/bills" element={<ProtectedRoute><MyBills /></ProtectedRoute>} />
+          <Route path="/patient/telemedicine" element={<ProtectedRoute><PatientTelemedicine /></ProtectedRoute>} />
+          <Route path="/patient/profile" element={<ProtectedRoute><PatientProfile /></ProtectedRoute>} />
           
           {/* Management Routes */}
-          <Route path="/management/dashboard" element={<ManagementDashboard />} />
-          <Route path="/management/revenue" element={<Revenue />} />
-          <Route path="/management/performance" element={<Performance />} />
-          <Route path="/management/analytics" element={<ManagementAnalytics />} />
-          <Route path="/management/reports" element={<ManagementReports />} />
+          <Route path="/management/dashboard" element={<ProtectedRoute><ManagementDashboard /></ProtectedRoute>} />
+          <Route path="/management/revenue" element={<ProtectedRoute><Revenue /></ProtectedRoute>} />
+          <Route path="/management/performance" element={<ProtectedRoute><Performance /></ProtectedRoute>} />
+          <Route path="/management/analytics" element={<ProtectedRoute><ManagementAnalytics /></ProtectedRoute>} />
+          <Route path="/management/reports" element={<ProtectedRoute><ManagementReports /></ProtectedRoute>} />
           
           {/* IT Routes */}
-          <Route path="/it/dashboard" element={<ITDashboard />} />
-          <Route path="/it/logs" element={<AuditLogs />} />
-          <Route path="/it/security" element={<ITSecurity />} />
-          <Route path="/it/health" element={<ITSystemHealth />} />
-          <Route path="/it/backups" element={<ITBackups />} />
-          <Route path="/it/settings" element={<ITSettings />} />
+          <Route path="/it/dashboard" element={<ProtectedRoute><ITDashboard /></ProtectedRoute>} />
+          <Route path="/it/logs" element={<ProtectedRoute><AuditLogs /></ProtectedRoute>} />
+          <Route path="/it/security" element={<ProtectedRoute><ITSecurity /></ProtectedRoute>} />
+          <Route path="/it/health" element={<ProtectedRoute><ITSystemHealth /></ProtectedRoute>} />
+          <Route path="/it/backups" element={<ProtectedRoute><ITBackups /></ProtectedRoute>} />
+          <Route path="/it/settings" element={<ProtectedRoute><ITSettings /></ProtectedRoute>} />
           
           {/* CHW Routes */}
-          <Route path="/chw/dashboard" element={<CHWDashboard />} />
-          <Route path="/chw/followups" element={<FollowUps />} />
-          <Route path="/chw/visits" element={<HomeVisits />} />
-          <Route path="/chw/maternal" element={<MaternalHealth />} />
-          <Route path="/chw/reports" element={<CHWReports />} />
+          <Route path="/chw/dashboard" element={<ProtectedRoute><CHWDashboard /></ProtectedRoute>} />
+          <Route path="/chw/followups" element={<ProtectedRoute><FollowUps /></ProtectedRoute>} />
+          <Route path="/chw/visits" element={<ProtectedRoute><HomeVisits /></ProtectedRoute>} />
+          <Route path="/chw/maternal" element={<ProtectedRoute><MaternalHealth /></ProtectedRoute>} />
+          <Route path="/chw/reports" element={<ProtectedRoute><CHWReports /></ProtectedRoute>} />
           
           {/* AI Routes */}
-          <Route path="/ai/dashboard" element={<AIDashboard />} />
-          <Route path="/ai/alerts" element={<AIAlerts />} />
-          <Route path="/ai/trends" element={<AITrends />} />
-          <Route path="/ai/risk" element={<AIRiskScores />} />
-          <Route path="/ai/insights" element={<AIInsights />} />
+          <Route path="/ai/dashboard" element={<ProtectedRoute><AIDashboard /></ProtectedRoute>} />
+          <Route path="/ai/alerts" element={<ProtectedRoute><AIAlerts /></ProtectedRoute>} />
+          <Route path="/ai/trends" element={<ProtectedRoute><AITrends /></ProtectedRoute>} />
+          <Route path="/ai/risk" element={<ProtectedRoute><AIRiskScores /></ProtectedRoute>} />
+          <Route path="/ai/insights" element={<ProtectedRoute><AIInsights /></ProtectedRoute>} />
           
           {/* Referral Routes */}
-          <Route path="/referral/dashboard" element={<ReferralDashboard />} />
-          <Route path="/referral/list" element={<ReferralList />} />
-          <Route path="/referral/specialists" element={<Specialists />} />
-          <Route path="/referral/partners" element={<Partners />} />
-          <Route path="/referral/results" element={<ExternalResults />} />
+          <Route path="/referral/dashboard" element={<ProtectedRoute><ReferralDashboard /></ProtectedRoute>} />
+          <Route path="/referral/list" element={<ProtectedRoute><ReferralList /></ProtectedRoute>} />
+          <Route path="/referral/specialists" element={<ProtectedRoute><Specialists /></ProtectedRoute>} />
+          <Route path="/referral/partners" element={<ProtectedRoute><Partners /></ProtectedRoute>} />
+          <Route path="/referral/results" element={<ProtectedRoute><ExternalResults /></ProtectedRoute>} />
           
           <Route path="*" element={<NotFound />} />
         </Routes>
