@@ -20,9 +20,13 @@ async function init() {
     await pool.connect();
     console.log('Connected to Postgres database.');
 
-    // Create users table if it doesn't exist
+    // Drop users table if exists (BE CAREFUL: all data will be lost)
+    await pool.query(`DROP TABLE IF EXISTS users`);
+    console.log('Dropped existing users table.');
+
+    // Create users table with all required fields
     await pool.query(`
-      CREATE TABLE IF NOT EXISTS users (
+      CREATE TABLE users (
         id TEXT PRIMARY KEY,
         email TEXT UNIQUE NOT NULL,
         password TEXT NOT NULL,
@@ -33,23 +37,24 @@ async function init() {
         facility_type TEXT
       )
     `);
+    console.log('Created users table with all columns.');
 
-    // Seed admin user if table is empty
-    const { rows } = await pool.query(`SELECT COUNT(*)::int AS cnt FROM users`);
-    if (rows[0].cnt === 0) {
-      await pool.query(
-        `INSERT INTO users (id, email, password, name, role)
-         VALUES ($1, $2, $3, $4, $5)`,
-        [
-          'u-admin',
-          'admin@smartcare360.co.ke',
-          bcrypt.hashSync('password', 10),
-          'System Admin',
-          'admin',
-        ]
-      );
-      console.log('Seeded admin user.');
-    }
+    // Seed admin user
+    await pool.query(
+      `INSERT INTO users (id, email, password, name, role, phone, facility_name, facility_type)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+      [
+        'u-admin',
+        'admin@smartcare360.co.ke',
+        bcrypt.hashSync('password', 10),
+        'System Admin',
+        'admin',
+        '',
+        '',
+        '',
+      ]
+    );
+    console.log('Seeded admin user.');
 
     return pool;
   } catch (err) {
