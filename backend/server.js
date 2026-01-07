@@ -75,3 +75,13 @@ function requireAuth(req, res, next) {
   }
 }
 // Note: real route mounting happens after DB init above
+
+// Process-level error handlers to ensure logs are visible
+process.on('uncaughtException', (err) => {
+  console.error('Uncaught Exception', err && (err.stack || err.message || err));
+  process.exit(1);
+});
+
+process.on('unhandledRejection', (reason) => {
+  console.error('Unhandled Rejection', reason && (reason.stack || reason.message || reason));
+});

@@ -14,10 +14,25 @@ router.post('/login', (req, res) => {
   if (!db) return res.status(500).json({ message: 'DB not initialized' });
 
   db.get('SELECT * FROM users WHERE email = $1', [email], (err, user) => {
-    if (err) return res.status(500).json({ message: 'DB error' });
-    if (!user) return res.status(401).json({ message: 'Invalid credentials' });
-    const valid = bcrypt.compareSync(password, user.password);
-    if (!valid) return res.status(401).json({ message: 'Invalid credentials' });
+    if (err) {
+      console.error('Auth login DB error', err && (err.message || err));
+      return res.status(500).json({ message: 'DB error' });
+    }
+    if (!user) {
+      console.warn('Auth login failed - user not found', { email });
+      return res.status(401).json({ message: 'Invalid credentials' });
+    }
+    let valid = false;
+    try {
+      valid = bcrypt.compareSync(password, user.password);
+    } catch (e) {
+      console.error('Auth bcrypt error', e && e.message);
+      return res.status(500).json({ message: 'Server error' });
+    }
+    if (!valid) {
+      console.warn('Auth login failed - bad password', { email });
+      return res.status(401).json({ message: 'Invalid credentials' });
+    }
     const token = jwt.sign({ id: user.id, email: user.email, role: user.role }, JWT_SECRET, { expiresIn: '8h' });
     res.json({ token, user: { id: user.id, email: user.email, name: user.name, role: user.role } });
   });

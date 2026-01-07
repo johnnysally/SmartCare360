@@ -22,20 +22,29 @@ function createPgWrapper(client) {
     run(sql, params, cb) {
       client
         .query(sql, params)
-        .then((res) => cb && cb(null))
-        .catch((err) => cb && cb(err));
+        .then((res) => cb && cb(null, res))
+        .catch((err) => {
+          console.error('PG run error', { err: err && err.message, sql, params });
+          cb && cb(err);
+        });
     },
     get(sql, params, cb) {
       client
         .query(sql, params)
         .then((res) => cb && cb(null, res.rows[0]))
-        .catch((err) => cb && cb(err));
+        .catch((err) => {
+          console.error('PG get error', { err: err && err.message, sql, params });
+          cb && cb(err);
+        });
     },
     all(sql, params, cb) {
       client
         .query(sql, params)
         .then((res) => cb && cb(null, res.rows))
-        .catch((err) => cb && cb(err));
+        .catch((err) => {
+          console.error('PG all error', { err: err && err.message, sql, params });
+          cb && cb(err);
+        });
     },
     serialize(cb) {
       // no-op for pg wrapper
