@@ -21,24 +21,29 @@ function createSqliteDb() {
 /* ================= PG WRAPPER ================= */
 function createPgWrapper(client) {
   return {
-    run(sql, params, cb) {
-      client.query(sql, params)
+    run(sql, params = [], cb) {
+      client
+        .query(sql, params)
         .then(() => cb && cb(null))
         .catch((err) => cb && cb(err));
     },
-    get(sql, params, cb) {
-      client.query(sql, params)
+    get(sql, params = [], cb) {
+      client
+        .query(sql, params)
         .then((res) => cb && cb(null, res.rows[0]))
         .catch((err) => cb && cb(err));
     },
-    all(sql, params, cb) {
-      client.query(sql, params)
+    all(sql, params = [], cb) {
+      client
+        .query(sql, params)
         .then((res) => cb && cb(null, res.rows))
         .catch((err) => cb && cb(err));
     },
     serialize(cb) {
+      // For sqlite compatibility
       cb && cb();
     },
+    client, // expose raw client if needed
   };
 }
 
@@ -50,53 +55,55 @@ async function init() {
 
     const client = new Client({
       connectionString: DATABASE_URL,
-      ssl: { rejectUnauthorized: false },
+      ssl: { rejectUnauthorized: false }, // required for Render
     });
 
-    await client.connect();
-    db = createPgWrapper(client);
+    try {
+      await client.connect();
+      db = createPgWrapper(client);
 
-    module.exports.db = db;
-    module.exports.usingPostgres = usingPostgres;
+      // Create users table if it doesn't exist
+      await client.query(`
+        CREATE TABLE IF NOT EXISTS users (
+          id TEXT PRIMARY KEY,
+          email TEXT UNIQUE NOT NULL,
+          password TEXT NOT NULL,
+          name TEXT,
+          role TEXT,
+          phone TEXT,
+          facility_name TEXT,
+          facility_type TEXT
+        )
+      `);
 
-    await client.query(`
-      CREATE TABLE IF NOT EXISTS users (
-        id TEXT PRIMARY KEY,
-        email TEXT UNIQUE NOT NULL,
-        password TEXT NOT NULL,
-        name TEXT,
-        role TEXT,
-        phone TEXT,
-        facility_name TEXT,
-        facility_type TEXT
-      )
-    `);
+      // Seed admin user if table empty
+      const { rows } = await client.query(`SELECT COUNT(*)::int AS cnt FROM users`);
+      if (rows[0].cnt === 0) {
+        await client.query(
+          `INSERT INTO users (id, email, password, name, role) VALUES ($1,$2,$3,$4,$5)`,
+          [
+            'u-admin',
+            'admin@smartcare360.co.ke',
+            bcrypt.hashSync('password', 10),
+            'System Admin',
+            'admin',
+          ]
+        );
+        console.log('Seeded admin user (Postgres)');
+      }
 
-    const { rows } = await client.query(`SELECT COUNT(*)::int AS cnt FROM users`);
-    if (rows[0].cnt === 0) {
-      await client.query(
-        `INSERT INTO users (id,email,password,name,role)
-         VALUES ($1,$2,$3,$4,$5)`,
-        [
-          'u-admin',
-          'admin@smartcare360.co.ke',
-          bcrypt.hashSync('password', 10),
-          'System Admin',
-          'admin',
-        ]
-      );
-      console.log('Seeded admin user (Postgres)');
+      module.exports.db = db;
+      module.exports.usingPostgres = usingPostgres;
+      return db;
+    } catch (err) {
+      console.error('Postgres connection failed:', err);
+      throw err;
     }
-
-    return;
   }
 
   /* ---------- SQLITE ---------- */
   usingPostgres = false;
   db = createSqliteDb();
-
-  module.exports.db = db;
-  module.exports.usingPostgres = usingPostgres;
 
   db.serialize(() => {
     db.run(`
@@ -116,8 +123,7 @@ async function init() {
       if (err) return console.error(err);
       if (row.cnt === 0) {
         db.run(
-          `INSERT INTO users (id,email,password,name,role)
-           VALUES (?,?,?,?,?)`,
+          `INSERT INTO users (id, email, password, name, role) VALUES (?,?,?,?,?)`,
           [
             'u-admin',
             'admin@smartcare360.co.ke',
@@ -130,6 +136,10 @@ async function init() {
       }
     });
   });
+
+  module.exports.db = db;
+  module.exports.usingPostgres = usingPostgres;
+  return db;
 }
 
 module.exports = { db, init, usingPostgres };
