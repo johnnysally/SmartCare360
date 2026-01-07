@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const dbModule = require('../db');
+const pool = require('../db'); // PostgreSQL pool
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { v4: uuidv4 } = require('uuid');
@@ -8,22 +8,25 @@ const { v4: uuidv4 } = require('uuid');
 const JWT_SECRET = process.env.JWT_SECRET || 'dev_secret';
 
 /* ===================== LOGIN ===================== */
-router.post('/login', (req, res) => {
+router.post('/login', async (req, res) => {
   const { email, password } = req.body;
 
-  if (!email || !password)
+  if (!email || !password) {
     return res.status(400).json({ message: 'Email and password required' });
+  }
 
-  const db = dbModule.db;
-  if (!db)
-    return res.status(500).json({ message: 'DB not initialized' });
+  try {
+    const result = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
+    const user = result.rows[0];
 
-  db.get('SELECT * FROM users WHERE email = ?', [email], (err, user) => {
-    if (err) return res.status(500).json({ message: 'DB error' });
-    if (!user) return res.status(401).json({ message: 'Invalid credentials' });
+    if (!user) {
+      return res.status(401).json({ message: 'Invalid credentials' });
+    }
 
     const valid = bcrypt.compareSync(password, user.password);
-    if (!valid) return res.status(401).json({ message: 'Invalid credentials' });
+    if (!valid) {
+      return res.status(401).json({ message: 'Invalid credentials' });
+    }
 
     const token = jwt.sign(
       { id: user.id, email: user.email, role: user.role },
@@ -38,13 +41,19 @@ router.post('/login', (req, res) => {
         email: user.email,
         name: user.name,
         role: user.role,
+        phone: user.phone,
+        facility_name: user.facility_name,
+        facility_type: user.facility_type,
       },
     });
-  });
+  } catch (err) {
+    console.error('Login Error:', err);
+    res.status(500).json({ message: 'Database error' });
+  }
 });
 
 /* ===================== SIGNUP ===================== */
-router.post('/signup', (req, res) => {
+router.post('/signup', async (req, res) => {
   const {
     firstName,
     lastName,
@@ -55,59 +64,57 @@ router.post('/signup', (req, res) => {
     facilityType,
   } = req.body;
 
-  if (!email || !password || !firstName)
+  if (!email || !password || !firstName) {
     return res.status(400).json({ message: 'Missing required fields' });
+  }
 
   const name = `${firstName} ${lastName || ''}`.trim();
-  const hashed = bcrypt.hashSync(password, 10);
+  const hashedPassword = bcrypt.hashSync(password, 10);
   const id = uuidv4();
 
-  const db = dbModule.db;
-  if (!db)
-    return res.status(500).json({ message: 'DB not initialized' });
+  try {
+    const insertQuery = `
+      INSERT INTO users (
+        id, email, password, name, role, phone, facility_name, facility_type
+      )
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+      RETURNING id, email, name, role, phone, facility_name, facility_type;
+    `;
 
-  db.run(
-    `
-    INSERT INTO users (
-      id, email, password, name, role, phone, facility_name, facility_type
-    )
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-    `,
-    [
+    const values = [
       id,
       email,
-      hashed,
+      hashedPassword,
       name,
-      'admin',
+      'admin',       // default role
       phone || '',
       facilityName || '',
-      facilityType || '',
-    ],
-    function (err) {
-      if (err) {
-        if (err.message.includes('UNIQUE'))
-          return res.status(400).json({ message: 'Email already exists' });
+      facilityType || ''
+    ];
 
-        return res.status(500).json({ message: 'DB error' });
-      }
+    const result = await pool.query(insertQuery, values);
+    const user = result.rows[0];
 
-      const token = jwt.sign(
-        { id, email, role: 'admin' },
-        JWT_SECRET,
-        { expiresIn: '8h' }
-      );
+    const token = jwt.sign(
+      { id: user.id, email: user.email, role: user.role },
+      JWT_SECRET,
+      { expiresIn: '8h' }
+    );
 
-      res.json({
-        token,
-        user: {
-          id,
-          email,
-          name,
-          role: 'admin',
-        },
-      });
+    res.json({
+      token,
+      user
+    });
+  } catch (err) {
+    console.error('Signup Error:', err);
+
+    // Handle unique email violation (PostgreSQL code 23505)
+    if (err.code === '23505') {
+      return res.status(400).json({ message: 'Email already exists' });
     }
-  );
+
+    res.status(500).json({ message: 'Database error' });
+  }
 });
 
 module.exports = router;
