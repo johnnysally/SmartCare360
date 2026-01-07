@@ -50,6 +50,9 @@ async function init() {
     const client = new Client({ connectionString: DATABASE_URL, ssl: process.env.PGSSLMODE === 'require' ? { rejectUnauthorized: false } : false });
     await client.connect();
     db = createPgWrapper(client);
+    // update exported reference so other modules see the initialized db
+    module.exports.db = db;
+    module.exports.usingPostgres = usingPostgres;
 
     // Create tables in Postgres
     const createQueries = [
@@ -100,6 +103,9 @@ async function init() {
   } else {
     usingPostgres = false;
     db = createSqliteDb();
+    // update exported reference for sqlite case as well
+    module.exports.db = db;
+    module.exports.usingPostgres = usingPostgres;
     db.serialize(() => {
       db.run(`CREATE TABLE IF NOT EXISTS users (
         id TEXT PRIMARY KEY,
@@ -154,4 +160,6 @@ async function init() {
   }
 }
 
-module.exports = { db, init, usingPostgres };
+// Exported object: `db` will be updated after `init()` runs so callers
+// that `require('./db')` can access `dbModule.db` at runtime.
+module.exports = { db: db, init, usingPostgres };
