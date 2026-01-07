@@ -1,4 +1,4 @@
-# Welcome to your Lovable project
+# Welcome to SmartCare360 Hospital Management system project
 
 ## Project info
 

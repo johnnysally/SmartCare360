@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { db } = require('../db');
+const dbModule = require('../db');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { v4: uuidv4 } = require('uuid');
@@ -10,7 +10,10 @@ const JWT_SECRET = process.env.JWT_SECRET || 'dev_secret';
 router.post('/login', (req, res) => {
   const { email, password } = req.body;
   if (!email || !password) return res.status(400).json({ message: 'Email and password required' });
-  db.get('SELECT * FROM users WHERE email = ?', [email], (err, user) => {
+  const db = dbModule.db;
+  if (!db) return res.status(500).json({ message: 'DB not initialized' });
+
+  db.get('SELECT * FROM users WHERE email = $1', [email], (err, user) => {
     if (err) return res.status(500).json({ message: 'DB error' });
     if (!user) return res.status(401).json({ message: 'Invalid credentials' });
     const valid = bcrypt.compareSync(password, user.password);
@@ -25,7 +28,10 @@ router.post('/signup', (req, res) => {
   if (!email || !password) return res.status(400).json({ message: 'Email and password required' });
   const hashed = bcrypt.hashSync(password, 10);
   const id = uuidv4();
-  db.run('INSERT INTO users (id,email,password,name,role) VALUES (?,?,?,?,?)', [id, email, hashed, name || '', role], function (err) {
+  const db = dbModule.db;
+  if (!db) return res.status(500).json({ message: 'DB not initialized' });
+
+  db.run('INSERT INTO users (id,email,password,name,role) VALUES ($1,$2,$3,$4,$5)', [id, email, hashed, name || '', role], function (err) {
     if (err) {
       if (err.message && err.message.includes('UNIQUE')) return res.status(400).json({ message: 'Email already exists' });
       return res.status(500).json({ message: 'DB error' });
