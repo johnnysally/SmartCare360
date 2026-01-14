@@ -6,6 +6,10 @@ const { init } = require('./db');
 const jwt = require('jsonwebtoken');
 const { JWT_SECRET, PORT } = require('./config');
 
+const app = express();
+app.use(cors());
+app.use(bodyParser.json());
+
 // Initialize DB first, then require routes so they get the initialized db
 (async () => {
   try {
