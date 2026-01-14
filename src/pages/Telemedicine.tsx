@@ -3,8 +3,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Video, Phone, Calendar, Clock } from "lucide-react";
 import { useEffect, useState } from "react";
-import { getAppointments } from "@/lib/api";
+import { getAppointments, createTelemedicine } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from "@/components/ui/dialog";
+import { useForm } from "react-hook-form";
 
 const Telemedicine = () => {
   const [sessions, setSessions] = useState<any[]>([]);
@@ -46,7 +48,18 @@ const Telemedicine = () => {
           </CardContent></Card>
         </div>
 
-        <Button className="btn-gradient"><Video className="w-4 h-4 mr-2" />Start New Session</Button>
+        <Dialog>
+          <DialogTrigger asChild>
+            <Button className="btn-gradient"><Video className="w-4 h-4 mr-2" />Start New Session</Button>
+          </DialogTrigger>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Start Telemedicine Session</DialogTitle>
+            </DialogHeader>
+            <TelemedicineForm />
+            <DialogFooter />
+          </DialogContent>
+        </Dialog>
 
         <Card>
           <CardHeader><CardTitle>Today's Sessions</CardTitle></CardHeader>
@@ -80,3 +93,31 @@ const Telemedicine = () => {
 };
 
 export default Telemedicine;
+
+function TelemedicineForm(){
+  const { register, handleSubmit, reset } = useForm();
+  const { toast } = useToast();
+  const onSubmit = async (data:any) => {
+    try{
+      const created = await createTelemedicine({ patientId: data.patientId, doctorId: data.doctorId, scheduledAt: data.scheduledAt, status: data.status });
+      toast({ title: 'Session created' });
+      reset();
+    }catch(err:any){
+      toast({ title: 'Failed to create session', description: err?.message || '' });
+    }
+  };
+  return (
+    <form onSubmit={handleSubmit(onSubmit)} className="grid gap-3">
+      <input {...register('patientId')} placeholder="Patient ID" className="input" />
+      <input {...register('doctorId')} placeholder="Doctor ID" className="input" />
+      <input {...register('scheduledAt')} placeholder="Scheduled At (ISO)" className="input" />
+      <select {...register('status')} className="input">
+        <option value="scheduled">scheduled</option>
+        <option value="completed">completed</option>
+      </select>
+      <div className="flex justify-end">
+        <Button type="submit" className="btn-gradient">Create Session</Button>
+      </div>
+    </form>
+  );
+}

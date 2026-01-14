@@ -3,8 +3,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Plus, CreditCard, Smartphone } from "lucide-react";
 import { useEffect, useState } from "react";
-import { getAppointments, getPatients } from "@/lib/api";
+import { getAppointments, getPatients, createBilling } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from "@/components/ui/dialog";
+import { useForm } from "react-hook-form";
 
 const Billing = () => {
   const [appointments, setAppointments] = useState<any[]>([]);
@@ -53,7 +55,18 @@ const Billing = () => {
         </div>
 
         <div className="flex gap-3">
-          <Button className="btn-gradient"><Plus className="w-4 h-4 mr-2" />New Invoice</Button>
+          <Dialog>
+            <DialogTrigger asChild>
+              <Button className="btn-gradient"><Plus className="w-4 h-4 mr-2" />New Invoice</Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>New Invoice</DialogTitle>
+              </DialogHeader>
+              <BillingForm />
+              <DialogFooter />
+            </DialogContent>
+          </Dialog>
           <Button variant="outline"><Smartphone className="w-4 h-4 mr-2" />M-Pesa</Button>
           <Button variant="outline"><CreditCard className="w-4 h-4 mr-2" />NHIF</Button>
         </div>
@@ -89,3 +102,30 @@ const Billing = () => {
 };
 
 export default Billing;
+
+function BillingForm(){
+  const { register, handleSubmit, reset } = useForm();
+  const { toast } = useToast();
+  const onSubmit = async (data:any) => {
+    try{
+      await createBilling({ patientId: data.patientId, amount: Number(data.amount), status: data.status });
+      toast({ title: 'Invoice created' });
+      reset();
+    }catch(err:any){
+      toast({ title: 'Failed to create invoice', description: err?.message || '' });
+    }
+  };
+  return (
+    <form onSubmit={handleSubmit(onSubmit)} className="grid gap-3">
+      <input {...register('patientId')} placeholder="Patient ID" className="input" />
+      <input {...register('amount')} placeholder="Amount" className="input" />
+      <select {...register('status')} className="input">
+        <option value="pending">pending</option>
+        <option value="paid">paid</option>
+      </select>
+      <div className="flex justify-end">
+        <Button type="submit" className="btn-gradient">Create Invoice</Button>
+      </div>
+    </form>
+  );
+}

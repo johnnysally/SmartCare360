@@ -42,6 +42,58 @@ export async function createAppointment(payload) {
   return apiFetch('/appointments', { method: 'POST', body: JSON.stringify(payload) });
 }
 
+export async function getBilling() {
+  return apiFetch('/billing');
+}
+
+export async function createBilling(payload) {
+  return apiFetch('/billing', { method: 'POST', body: JSON.stringify(payload) });
+}
+
+export async function getPharmacyOrders() {
+  return apiFetch('/pharmacy');
+}
+
+export async function createPharmacyOrder(payload) {
+  return apiFetch('/pharmacy', { method: 'POST', body: JSON.stringify(payload) });
+}
+
+export async function getTelemedicine() {
+  return apiFetch('/telemedicine');
+}
+
+export async function createTelemedicine(payload) {
+  return apiFetch('/telemedicine', { method: 'POST', body: JSON.stringify(payload) });
+}
+
+export async function getReferrals() {
+  return apiFetch('/referrals');
+}
+
+export async function createReferral(payload) {
+  return apiFetch('/referrals', { method: 'POST', body: JSON.stringify(payload) });
+}
+
+export async function getUsers() {
+  return apiFetch('/users');
+}
+
+export async function createUser(payload) {
+  return apiFetch('/users', { method: 'POST', body: JSON.stringify(payload) });
+}
+
+export async function updateUser(id, payload) {
+  return apiFetch(`/users/${id}`, { method: 'PUT', body: JSON.stringify(payload) });
+}
+
+export async function changeUserPassword(id, payload) {
+  return apiFetch(`/users/${id}/change-password`, { method: 'POST', body: JSON.stringify(payload) });
+}
+
+export async function deleteUser(id) {
+  return apiFetch(`/users/${id}`, { method: 'DELETE' });
+}
+
 export default {
   postNewsletter,
   login,
@@ -50,4 +102,17 @@ export default {
   createPatient,
   getAppointments,
   createAppointment,
+  getBilling,
+  createBilling,
+  getPharmacyOrders,
+  createPharmacyOrder,
+  getTelemedicine,
+  createTelemedicine,
+  getReferrals,
+  createReferral,
+  getUsers,
+  createUser,
+  updateUser,
+  changeUserPassword,
+  deleteUser,
 };

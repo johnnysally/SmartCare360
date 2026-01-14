@@ -3,6 +3,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ArrowRightLeft, Plus, Clock, CheckCircle2, ArrowRight, Eye } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from "@/components/ui/dialog";
+import { useForm } from "react-hook-form";
+import { createReferral } from "@/lib/api";
+import { useToast } from "@/hooks/use-toast";
 
 const referrals = [
   { id: "REF-001", patient: "John Omondi", from: "SmartCare Clinic", to: "Kenyatta Hospital", type: "Cardiology", status: "Pending", date: "Jan 5, 2026" },
@@ -20,10 +24,21 @@ const ReferralList = () => (
           <h2 className="text-lg font-medium">Manage Referrals</h2>
           <p className="text-sm text-muted-foreground">Track incoming and outgoing patient referrals</p>
         </div>
-        <Button className="btn-gradient">
-          <Plus className="w-4 h-4 mr-2" />
-          New Referral
-        </Button>
+        <Dialog>
+          <DialogTrigger asChild>
+            <Button className="btn-gradient">
+              <Plus className="w-4 h-4 mr-2" />
+              New Referral
+            </Button>
+          </DialogTrigger>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>New Referral</DialogTitle>
+            </DialogHeader>
+            <ReferralForm />
+            <DialogFooter />
+          </DialogContent>
+        </Dialog>
       </div>
 
       {/* Referrals Table */}
@@ -80,3 +95,28 @@ const ReferralList = () => (
 );
 
 export default ReferralList;
+
+function ReferralForm(){
+  const { register, handleSubmit, reset } = useForm();
+  const { toast } = useToast();
+  const onSubmit = async (data:any) => {
+    try{
+      const created = await createReferral({ patientId: data.patientId, fromFacility: data.from, toFacility: data.to, reason: data.reason });
+      toast({ title: 'Referral created' });
+      reset();
+    }catch(err:any){
+      toast({ title: 'Failed to create referral', description: err?.message || '' });
+    }
+  };
+  return (
+    <form onSubmit={handleSubmit(onSubmit)} className="grid gap-3">
+      <input {...register('patientId')} placeholder="Patient ID" className="input" />
+      <input {...register('from')} placeholder="From Facility" className="input" />
+      <input {...register('to')} placeholder="To Facility" className="input" />
+      <input {...register('reason')} placeholder="Reason" className="input" />
+      <div className="flex justify-end">
+        <Button type="submit" className="btn-gradient">Create Referral</Button>
+      </div>
+    </form>
+  );
+}

@@ -5,6 +5,9 @@ import { Plus, Calendar as CalIcon } from "lucide-react";
 import { useEffect, useState } from "react";
 import { getAppointments } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from "@/components/ui/dialog";
+import { useForm } from "react-hook-form";
+import { createAppointment } from "@/lib/api";
 
 const Appointments = () => {
   const [appointments, setAppointments] = useState<any[]>([]);
@@ -34,7 +37,18 @@ const Appointments = () => {
             <CalIcon className="w-5 h-5" />
             <span>Today</span>
           </div>
-          <Button className="btn-gradient"><Plus className="w-4 h-4 mr-2" />New Appointment</Button>
+          <Dialog>
+            <DialogTrigger asChild>
+              <Button className="btn-gradient"><Plus className="w-4 h-4 mr-2" />New Appointment</Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>New Appointment</DialogTitle>
+              </DialogHeader>
+              <AppointmentForm onCreated={async (a)=> setAppointments((s:any)=>[a,...s])} />
+              <DialogFooter />
+            </DialogContent>
+          </Dialog>
         </div>
         
         <Card>
@@ -66,3 +80,32 @@ const Appointments = () => {
 };
 
 export default Appointments;
+
+function AppointmentForm({ onCreated }: { onCreated?: (a:any)=>void }){
+  const { register, handleSubmit, reset } = useForm();
+  const { toast } = useToast();
+  const onSubmit = async (data: any) => {
+    try{
+      const created = await createAppointment(data);
+      toast({ title: 'Appointment created' });
+      onCreated && onCreated(created);
+      reset();
+    }catch(err:any){
+      toast({ title: 'Failed to create appointment', description: err?.message || '' });
+    }
+  };
+  return (
+    <form onSubmit={handleSubmit(onSubmit)} className="grid gap-3 p-2">
+      <input {...register('patientId')} placeholder="Patient ID" className="input" />
+      <input {...register('time')} placeholder="Time (ISO)" className="input" />
+      <input {...register('type')} placeholder="Type" className="input" />
+      <select {...register('status')} className="input">
+        <option value="pending">pending</option>
+        <option value="confirmed">confirmed</option>
+      </select>
+      <div className="flex justify-end">
+        <Button type="submit" className="btn-gradient">Create</Button>
+      </div>
+    </form>
+  );
+}

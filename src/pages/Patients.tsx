@@ -2,6 +2,9 @@ import DashboardLayout from "@/components/DashboardLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from "@/components/ui/dialog";
+import { useForm } from "react-hook-form";
+import { createPatient } from "@/lib/api";
 import { Search, Plus, Filter } from "lucide-react";
 import { useEffect, useState } from "react";
 import { getPatients } from "@/lib/api";
@@ -39,7 +42,18 @@ const Patients = () => {
           </div>
           <div className="flex gap-2">
             <Button variant="outline"><Filter className="w-4 h-4 mr-2" />Filter</Button>
-            <Button className="btn-gradient"><Plus className="w-4 h-4 mr-2" />Add Patient</Button>
+            <Dialog>
+              <DialogTrigger asChild>
+                <Button className="btn-gradient"><Plus className="w-4 h-4 mr-2" />Add Patient</Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Add Patient</DialogTitle>
+                </DialogHeader>
+                <PatientForm onCreated={async (p) => { setPatients((s:any)=>[p,...s]); }} />
+                <DialogFooter />
+              </DialogContent>
+            </Dialog>
           </div>
         </div>
         
@@ -75,5 +89,31 @@ const Patients = () => {
     </DashboardLayout>
   );
 };
+
+function PatientForm({ onCreated }: { onCreated?: (p:any)=>void }){
+  const { register, handleSubmit, reset } = useForm();
+  const { toast } = useToast();
+  const onSubmit = async (data: any) => {
+    try{
+      const created = await createPatient(data);
+      toast({ title: 'Patient created' });
+      onCreated && onCreated(created);
+      reset();
+    }catch(err:any){
+      toast({ title: 'Failed to create patient', description: err?.message || '' });
+    }
+  };
+  return (
+    <form onSubmit={handleSubmit(onSubmit)} className="grid gap-3">
+      <Input placeholder="Name" {...register('name')} />
+      <Input placeholder="Age" type="number" {...register('age')} />
+      <Input placeholder="Phone" {...register('phone')} />
+      <Input placeholder="Last Visit" {...register('lastVisit')} />
+      <div className="flex justify-end gap-2">
+        <Button type="submit" className="btn-gradient">Create</Button>
+      </div>
+    </form>
+  );
+}
 
 export default Patients;

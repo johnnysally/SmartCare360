@@ -18,17 +18,41 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Search, Plus, MoreHorizontal, Filter, Download, UserCheck, UserX, Mail } from "lucide-react";
-
-const users = [
-  { id: 1, name: "Dr. Sarah Kimani", email: "sarah.kimani@clinic.com", role: "Doctor", status: "Active", lastLogin: "2 hours ago" },
-  { id: 2, name: "John Mwangi", email: "john.mwangi@clinic.com", role: "Front Desk", status: "Active", lastLogin: "1 hour ago" },
-  { id: 3, name: "Grace Wanjiku", email: "grace.wanjiku@clinic.com", role: "Nurse", status: "Active", lastLogin: "30 mins ago" },
-  { id: 4, name: "Peter Ochieng", email: "peter.ochieng@clinic.com", role: "Pharmacist", status: "Inactive", lastLogin: "3 days ago" },
-  { id: 5, name: "Mary Akinyi", email: "mary.akinyi@clinic.com", role: "Lab Tech", status: "Active", lastLogin: "5 hours ago" },
-  { id: 6, name: "James Kiprop", email: "james.kiprop@clinic.com", role: "Doctor", status: "Suspended", lastLogin: "1 week ago" },
-];
+import { useEffect, useState } from "react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from "@/components/ui/dialog";
+import { useForm } from "react-hook-form";
+import { getUsers, createUser, updateUser, changeUserPassword, deleteUser } from "@/lib/api";
+import { useToast } from "@/hooks/use-toast";
 
 const UserManagement = () => {
+  const [users, setUsers] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const { toast } = useToast();
+
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        const res = await getUsers();
+        if (mounted) setUsers(res || []);
+      } catch (err: any) {
+        toast({ title: 'Failed to load users', description: err?.message || '' });
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    })();
+    return () => { mounted = false; };
+  }, []);
+
+  const refresh = async () => {
+    try {
+      const res = await getUsers();
+      setUsers(res || []);
+    } catch (err:any){
+      toast({ title: 'Failed to refresh users', description: err?.message || '' });
+    }
+  };
+
   return (
     <AdminLayout title="User Management">
       {/* Stats */}
@@ -94,10 +118,21 @@ const UserManagement = () => {
               <Button variant="outline" size="icon">
                 <Download className="w-4 h-4" />
               </Button>
-              <Button className="gap-2">
-                <Plus className="w-4 h-4" />
-                Add User
-              </Button>
+              <Dialog>
+                <DialogTrigger asChild>
+                  <Button className="gap-2">
+                    <Plus className="w-4 h-4" />
+                    Add User
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Invite / Create User</DialogTitle>
+                  </DialogHeader>
+                  <AddUserForm onDone={() => { refresh(); }} />
+                  <DialogFooter />
+                </DialogContent>
+              </Dialog>
             </div>
           </div>
         </CardHeader>
@@ -143,9 +178,33 @@ const UserManagement = () => {
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
                         <DropdownMenuItem>View Profile</DropdownMenuItem>
-                        <DropdownMenuItem>Edit User</DropdownMenuItem>
-                        <DropdownMenuItem>Reset Password</DropdownMenuItem>
-                        <DropdownMenuItem className="text-destructive">Suspend User</DropdownMenuItem>
+                        <Dialog>
+                          <DialogTrigger asChild>
+                            <DropdownMenuItem>Edit User</DropdownMenuItem>
+                          </DialogTrigger>
+                          <DialogContent>
+                            <DialogHeader>
+                              <DialogTitle>Edit User</DialogTitle>
+                            </DialogHeader>
+                            <EditUserForm user={user} onDone={() => refresh()} />
+                            <DialogFooter />
+                          </DialogContent>
+                        </Dialog>
+
+                        <Dialog>
+                          <DialogTrigger asChild>
+                            <DropdownMenuItem>Reset Password</DropdownMenuItem>
+                          </DialogTrigger>
+                          <DialogContent>
+                            <DialogHeader>
+                              <DialogTitle>Change Password</DialogTitle>
+                            </DialogHeader>
+                            <ChangePasswordForm user={user} onDone={() => toast({ title: 'Password changed' })} />
+                            <DialogFooter />
+                          </DialogContent>
+                        </Dialog>
+
+                        <DropdownMenuItem className="text-destructive" onSelect={async () => { try { await deleteUser(user.id); toast({ title: 'Deleted user' }); refresh(); } catch(err:any){ toast({ title: 'Delete failed', description: err?.message || '' }); } }}>Delete User</DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </TableCell>
@@ -160,3 +219,87 @@ const UserManagement = () => {
 };
 
 export default UserManagement;
+
+function AddUserForm({ onDone }: { onDone?: () => void }){
+  const { register, handleSubmit, reset } = useForm();
+  const { toast } = useToast();
+  const onSubmit = async (data:any) => {
+    try{
+      await createUser({ email: data.email, password: data.password, name: data.name, role: data.role });
+      toast({ title: 'User created' });
+      reset();
+      onDone && onDone();
+    }catch(err:any){
+      toast({ title: 'Failed to create user', description: err?.message || '' });
+    }
+  };
+  return (
+    <form onSubmit={handleSubmit(onSubmit)} className="grid gap-3">
+      <input {...register('name')} placeholder="Full name" className="input" />
+      <input {...register('email')} placeholder="Email" className="input" />
+      <input {...register('password')} placeholder="Password" type="password" className="input" />
+      <select {...register('role')} className="input">
+        <option value="admin">admin</option>
+        <option value="doctor">doctor</option>
+        <option value="nurse">nurse</option>
+        <option value="pharmacist">pharmacist</option>
+        <option value="staff">staff</option>
+      </select>
+      <div className="flex justify-end">
+        <Button type="submit" className="btn-gradient">Create User</Button>
+      </div>
+    </form>
+  );
+}
+
+function EditUserForm({ user, onDone }: any){
+  const { register, handleSubmit } = useForm({ defaultValues: { name: user.name, role: user.role } });
+  const { toast } = useToast();
+  const onSubmit = async (data:any) => {
+    try{
+      await updateUser(user.id, { name: data.name, role: data.role });
+      toast({ title: 'User updated' });
+      onDone && onDone();
+    }catch(err:any){
+      toast({ title: 'Failed to update user', description: err?.message || '' });
+    }
+  };
+  return (
+    <form onSubmit={handleSubmit(onSubmit)} className="grid gap-3">
+      <input {...register('name')} placeholder="Full name" className="input" />
+      <select {...register('role')} className="input">
+        <option value="admin">admin</option>
+        <option value="doctor">doctor</option>
+        <option value="nurse">nurse</option>
+        <option value="pharmacist">pharmacist</option>
+        <option value="staff">staff</option>
+      </select>
+      <div className="flex justify-end">
+        <Button type="submit" className="btn-gradient">Save</Button>
+      </div>
+    </form>
+  );
+}
+
+function ChangePasswordForm({ user, onDone }: any){
+  const { register, handleSubmit, reset } = useForm();
+  const { toast } = useToast();
+  const onSubmit = async (data:any) => {
+    try{
+      await changeUserPassword(user.id, { password: data.password });
+      toast({ title: 'Password updated' });
+      reset();
+      onDone && onDone();
+    }catch(err:any){
+      toast({ title: 'Failed to update password', description: err?.message || '' });
+    }
+  };
+  return (
+    <form onSubmit={handleSubmit(onSubmit)} className="grid gap-3">
+      <input {...register('password')} placeholder="New password" type="password" className="input" />
+      <div className="flex justify-end">
+        <Button type="submit" className="btn-gradient">Change Password</Button>
+      </div>
+    </form>
+  );
+}
