@@ -72,7 +72,7 @@ const Pharmacy = () => (
 export default Pharmacy;
 
 function PharmacyForm(){
-  const { register, handleSubmit, reset } = useForm();
+  const { register, handleSubmit, reset, formState: { errors, isSubmitting } } = useForm();
   const { toast } = useToast();
   const onSubmit = async (data:any) => {
     try{
@@ -85,16 +85,62 @@ function PharmacyForm(){
   };
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="grid gap-3">
-      <input {...register('patientId')} placeholder="Patient ID" className="input" />
-      <input {...register('item')} placeholder="Medication" className="input" />
-      <input {...register('qty')} placeholder="Quantity" className="input" />
-      <input {...register('total')} placeholder="Total" className="input" />
-      <select {...register('status')} className="input">
-        <option value="pending">pending</option>
-        <option value="fulfilled">fulfilled</option>
-      </select>
+      <div>
+        <Input 
+          {...register('patientId', { 
+            required: 'Patient ID is required',
+            min: { value: 1, message: 'Patient ID must be positive' }
+          })} 
+          placeholder="Patient ID" 
+          type="number"
+        />
+        {errors.patientId && <p className="text-sm text-destructive mt-1">{errors.patientId.message}</p>}
+      </div>
+      <div>
+        <Input 
+          {...register('item', { required: 'Medication is required' })} 
+          placeholder="Medication" 
+        />
+        {errors.item && <p className="text-sm text-destructive mt-1">{errors.item.message}</p>}
+      </div>
+      <div>
+        <Input 
+          {...register('qty', { 
+            required: 'Quantity is required',
+            min: { value: 1, message: 'Quantity must be at least 1' }
+          })} 
+          placeholder="Quantity" 
+          type="number"
+        />
+        {errors.qty && <p className="text-sm text-destructive mt-1">{errors.qty.message}</p>}
+      </div>
+      <div>
+        <Input 
+          {...register('total', { 
+            required: 'Total is required',
+            min: { value: 0.01, message: 'Total must be positive' }
+          })} 
+          placeholder="Total" 
+          type="number" 
+          step="0.01"
+        />
+        {errors.total && <p className="text-sm text-destructive mt-1">{errors.total.message}</p>}
+      </div>
+      <div>
+        <select 
+          {...register('status', { required: 'Status is required' })} 
+          className="input"
+        >
+          <option value="">Select Status</option>
+          <option value="pending">pending</option>
+          <option value="fulfilled">fulfilled</option>
+        </select>
+        {errors.status && <p className="text-sm text-destructive mt-1">{errors.status.message}</p>}
+      </div>
       <div className="flex justify-end">
-        <Button type="submit" className="btn-gradient">Create Order</Button>
+        <Button type="submit" className="btn-gradient" disabled={isSubmitting}>
+          {isSubmitting ? 'Creating...' : 'Create Order'}
+        </Button>
       </div>
     </form>
   );

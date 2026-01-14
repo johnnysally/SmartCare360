@@ -4,9 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ArrowRightLeft, Plus, Clock, CheckCircle2, ArrowRight, Eye } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from "@/components/ui/dialog";
-import { useForm } from "react-hook-form";
-import { createReferral } from "@/lib/api";
-import { useToast } from "@/hooks/use-toast";
+import { Input } from "@/components/ui/input";
 
 const referrals = [
   { id: "REF-001", patient: "John Omondi", from: "SmartCare Clinic", to: "Kenyatta Hospital", type: "Cardiology", status: "Pending", date: "Jan 5, 2026" },
@@ -97,7 +95,7 @@ const ReferralList = () => (
 export default ReferralList;
 
 function ReferralForm(){
-  const { register, handleSubmit, reset } = useForm();
+  const { register, handleSubmit, reset, formState: { errors, isSubmitting } } = useForm();
   const { toast } = useToast();
   const onSubmit = async (data:any) => {
     try{
@@ -110,12 +108,42 @@ function ReferralForm(){
   };
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="grid gap-3">
-      <input {...register('patientId')} placeholder="Patient ID" className="input" />
-      <input {...register('from')} placeholder="From Facility" className="input" />
-      <input {...register('to')} placeholder="To Facility" className="input" />
-      <input {...register('reason')} placeholder="Reason" className="input" />
+      <div>
+        <Input 
+          {...register('patientId', { 
+            required: 'Patient ID is required',
+            min: { value: 1, message: 'Patient ID must be positive' }
+          })} 
+          placeholder="Patient ID" 
+          type="number"
+        />
+        {errors.patientId && <p className="text-sm text-destructive mt-1">{errors.patientId.message}</p>}
+      </div>
+      <div>
+        <Input 
+          {...register('from', { required: 'From facility is required' })} 
+          placeholder="From Facility" 
+        />
+        {errors.from && <p className="text-sm text-destructive mt-1">{errors.from.message}</p>}
+      </div>
+      <div>
+        <Input 
+          {...register('to', { required: 'To facility is required' })} 
+          placeholder="To Facility" 
+        />
+        {errors.to && <p className="text-sm text-destructive mt-1">{errors.to.message}</p>}
+      </div>
+      <div>
+        <Input 
+          {...register('reason', { required: 'Reason is required' })} 
+          placeholder="Reason" 
+        />
+        {errors.reason && <p className="text-sm text-destructive mt-1">{errors.reason.message}</p>}
+      </div>
       <div className="flex justify-end">
-        <Button type="submit" className="btn-gradient">Create Referral</Button>
+        <Button type="submit" className="btn-gradient" disabled={isSubmitting}>
+          {isSubmitting ? 'Creating...' : 'Create Referral'}
+        </Button>
       </div>
     </form>
   );

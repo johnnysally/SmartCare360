@@ -7,27 +7,74 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogT
 import { useForm } from "react-hook-form";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { createPatient, createAppointment, createBilling } from "@/lib/api";
+import { createPatient, createAppointment, createBilling, getPatients, getAppointments, getUsers, getBilling, createUser } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
-
-const stats = [
-  { label: "Total Patients", value: "2,847", change: "+12%", icon: Users, color: "text-primary" },
-  { label: "Today's Appointments", value: "48", change: "+5", icon: Calendar, color: "text-info" },
-  { label: "Revenue (Today)", value: "KES 156,400", change: "+8%", icon: CreditCard, color: "text-success" },
-  { label: "Queue Length", value: "12", change: "-3", icon: Clock, color: "text-warning" },
-];
-
-const recentPatients = [
-  { name: "Mary Wanjiku", time: "10 mins ago", type: "Check-up", status: "In Queue" },
-  { name: "John Omondi", time: "25 mins ago", type: "Follow-up", status: "With Doctor" },
-  { name: "Fatima Hassan", time: "45 mins ago", type: "Emergency", status: "Completed" },
-  { name: "Peter Kamau", time: "1 hour ago", type: "Consultation", status: "Completed" },
-];
+import { useEffect } from "react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 const Dashboard = () => {
   const [dialogOpen, setDialogOpen] = useState<string | null>(null);
+  const [patients, setPatients] = useState<any[]>([]);
+  const [appointments, setAppointments] = useState<any[]>([]);
+  const [users, setUsers] = useState<any[]>([]);
+  const [billing, setBilling] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
   const { toast } = useToast();
+
+  useEffect(() => {
+    fetchDashboardData();
+  }, []);
+
+  const fetchDashboardData = async () => {
+    try {
+      const [patientsData, appointmentsData, usersData, billingData] = await Promise.all([
+        getPatients(),
+        getAppointments(),
+        getUsers(),
+        getBilling()
+      ]);
+      setPatients(patientsData || []);
+      setAppointments(appointmentsData || []);
+      setUsers(usersData || []);
+      setBilling(billingData || []);
+    } catch (err: any) {
+      toast({ title: 'Failed to load dashboard data', description: err?.message || '' });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Calculate dynamic stats
+  const totalPatients = patients.length;
+  const todaysAppointments = appointments.filter(a => {
+    const today = new Date().toDateString();
+    return new Date(a.time || a.createdAt).toDateString() === today;
+  }).length;
+  const todaysRevenue = billing
+    .filter(b => b.status === 'paid' && new Date(b.createdAt).toDateString() === new Date().toDateString())
+    .reduce((sum, b) => sum + (b.amount || 0), 0);
+  const queueLength = appointments.filter(a => a.status === 'confirmed' || a.status === 'pending').length;
+
+  const stats = [
+    { label: "Total Patients", value: totalPatients.toString(), change: "+12%", icon: Users, color: "text-primary" },
+    { label: "Today's Appointments", value: todaysAppointments.toString(), change: "+5", icon: Calendar, color: "text-info" },
+    { label: "Revenue (Today)", value: `KES ${todaysRevenue.toLocaleString()}`, change: "+8%", icon: CreditCard, color: "text-success" },
+    { label: "Queue Length", value: queueLength.toString(), change: "-3", icon: Clock, color: "text-warning" },
+  ];
+
+  // Get recent patients (last 4 patients)
+  const recentPatients = patients.slice(-4).reverse().map((patient: any) => ({
+    name: patient.name,
+    time: patient.lastVisit ? new Date(patient.lastVisit).toLocaleString() : "Recently added",
+    type: "New Patient",
+    status: "Registered"
+  }));
   return (
     <DashboardLayout title="Dashboard">
       <div className="space-y-6 animate-fade-in">
@@ -61,26 +108,32 @@ const Dashboard = () => {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {recentPatients.map((patient, index) => (
-                  <div key={index} className="flex items-center justify-between py-2 border-b border-border last:border-0">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-medium">
-                        {patient.name.split(" ").map(n => n[0]).join("")}
+                {loading ? (
+                  <div className="py-6 text-center text-sm text-muted-foreground">Loading patients...</div>
+                ) : recentPatients.length === 0 ? (
+                  <div className="py-6 text-center text-sm text-muted-foreground">No patients yet. Add your first patient!</div>
+                ) : (
+                  recentPatients.map((patient, index) => (
+                    <div key={index} className="flex items-center justify-between py-2 border-b border-border last:border-0">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-medium">
+                          {patient.name.split(" ").map(n => n[0]).join("")}
+                        </div>
+                        <div>
+                          <div className="font-medium">{patient.name}</div>
+                          <div className="text-sm text-muted-foreground">{patient.type} • {patient.time}</div>
+                        </div>
                       </div>
-                      <div>
-                        <div className="font-medium">{patient.name}</div>
-                        <div className="text-sm text-muted-foreground">{patient.type} • {patient.time}</div>
-                      </div>
+                      <span className={`text-xs px-2 py-1 rounded-full ${
+                        patient.status === "In Queue" ? "bg-warning/10 text-warning" :
+                        patient.status === "With Doctor" ? "bg-info/10 text-info" :
+                        "bg-success/10 text-success"
+                      }`}>
+                        {patient.status}
+                      </span>
                     </div>
-                    <span className={`text-xs px-2 py-1 rounded-full ${
-                      patient.status === "In Queue" ? "bg-warning/10 text-warning" :
-                      patient.status === "With Doctor" ? "bg-info/10 text-info" :
-                      "bg-success/10 text-success"
-                    }`}>
-                      {patient.status}
-                    </span>
-                  </div>
-                ))}
+                  ))
+                )}
               </div>
             </CardContent>
           </Card>
@@ -91,53 +144,79 @@ const Dashboard = () => {
               <CardTitle className="font-display">Quick Actions</CardTitle>
             </CardHeader>
             <CardContent className="grid grid-cols-2 gap-3">
-              <Dialog open={dialogOpen === 'patient'} onOpenChange={(open) => setDialogOpen(open ? 'patient' : null)}>
-                <DialogTrigger asChild>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
                   <button className="bg-primary text-white p-4 rounded-xl flex items-center gap-3 hover:opacity-90 transition-opacity">
                     <UserPlus className="w-5 h-5" />
-                    <span className="font-medium">New Patient</span>
+                    <span className="font-medium">Create</span>
                   </button>
-                </DialogTrigger>
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>Add New Patient</DialogTitle>
-                  </DialogHeader>
-                  <PatientForm onCreated={() => setDialogOpen(null)} />
-                  <DialogFooter />
-                </DialogContent>
-              </Dialog>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start" className="w-48">
+                  <Dialog open={dialogOpen === 'patient'} onOpenChange={(open) => setDialogOpen(open ? 'patient' : null)}>
+                    <DialogTrigger asChild>
+                      <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                        <UserPlus className="w-4 h-4 mr-2" />
+                        New Patient
+                      </DropdownMenuItem>
+                    </DialogTrigger>
+                    <DialogContent>
+                      <DialogHeader>
+                        <DialogTitle>Add New Patient</DialogTitle>
+                      </DialogHeader>
+                      <PatientForm onCreated={() => { setDialogOpen(null); fetchDashboardData(); }} />
+                      <DialogFooter />
+                    </DialogContent>
+                  </Dialog>
 
-              <Dialog open={dialogOpen === 'appointment'} onOpenChange={(open) => setDialogOpen(open ? 'appointment' : null)}>
-                <DialogTrigger asChild>
-                  <button className="bg-info text-white p-4 rounded-xl flex items-center gap-3 hover:opacity-90 transition-opacity">
-                    <Calendar className="w-5 h-5" />
-                    <span className="font-medium">Book Appointment</span>
-                  </button>
-                </DialogTrigger>
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>Book Appointment</DialogTitle>
-                  </DialogHeader>
-                  <AppointmentForm onCreated={() => setDialogOpen(null)} />
-                  <DialogFooter />
-                </DialogContent>
-              </Dialog>
+                  <Dialog open={dialogOpen === 'staff'} onOpenChange={(open) => setDialogOpen(open ? 'staff' : null)}>
+                    <DialogTrigger asChild>
+                      <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                        <UserPlus className="w-4 h-4 mr-2" />
+                        Add Staff
+                      </DropdownMenuItem>
+                    </DialogTrigger>
+                    <DialogContent>
+                      <DialogHeader>
+                        <DialogTitle>Create Staff Member</DialogTitle>
+                      </DialogHeader>
+                      <StaffForm onCreated={() => { setDialogOpen(null); fetchDashboardData(); }} />
+                      <DialogFooter />
+                    </DialogContent>
+                  </Dialog>
 
-              <Dialog open={dialogOpen === 'payment'} onOpenChange={(open) => setDialogOpen(open ? 'payment' : null)}>
-                <DialogTrigger asChild>
-                  <button className="bg-success text-white p-4 rounded-xl flex items-center gap-3 hover:opacity-90 transition-opacity">
-                    <CreditCard className="w-5 h-5" />
-                    <span className="font-medium">Process Payment</span>
-                  </button>
-                </DialogTrigger>
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>Process Payment</DialogTitle>
-                  </DialogHeader>
-                  <PaymentForm onCreated={() => setDialogOpen(null)} />
-                  <DialogFooter />
-                </DialogContent>
-              </Dialog>
+                  <Dialog open={dialogOpen === 'appointment'} onOpenChange={(open) => setDialogOpen(open ? 'appointment' : null)}>
+                    <DialogTrigger asChild>
+                      <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                        <Calendar className="w-4 h-4 mr-2" />
+                        Book Appointment
+                      </DropdownMenuItem>
+                    </DialogTrigger>
+                    <DialogContent>
+                      <DialogHeader>
+                        <DialogTitle>Book Appointment</DialogTitle>
+                      </DialogHeader>
+                      <AppointmentForm onCreated={() => { setDialogOpen(null); fetchDashboardData(); }} />
+                      <DialogFooter />
+                    </DialogContent>
+                  </Dialog>
+
+                  <Dialog open={dialogOpen === 'payment'} onOpenChange={(open) => setDialogOpen(open ? 'payment' : null)}>
+                    <DialogTrigger asChild>
+                      <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                        <CreditCard className="w-4 h-4 mr-2" />
+                        Process Payment
+                      </DropdownMenuItem>
+                    </DialogTrigger>
+                    <DialogContent>
+                      <DialogHeader>
+                        <DialogTitle>Process Payment</DialogTitle>
+                      </DialogHeader>
+                      <PaymentForm onCreated={() => { setDialogOpen(null); fetchDashboardData(); }} />
+                      <DialogFooter />
+                    </DialogContent>
+                  </Dialog>
+                </DropdownMenuContent>
+              </DropdownMenu>
 
               <button 
                 onClick={() => navigate('/queue')}
@@ -163,7 +242,7 @@ const Dashboard = () => {
 };
 
 function PatientForm({ onCreated }: { onCreated?: () => void }){
-  const { register, handleSubmit, reset } = useForm();
+  const { register, handleSubmit, reset, formState: { errors, isSubmitting } } = useForm();
   const { toast } = useToast();
   const onSubmit = async (data: any) => {
     try{
@@ -177,19 +256,47 @@ function PatientForm({ onCreated }: { onCreated?: () => void }){
   };
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="grid gap-3">
-      <Input placeholder="Full Name" {...register('name')} />
-      <Input placeholder="Age" type="number" {...register('age')} />
-      <Input placeholder="Phone Number" {...register('phone')} />
-      <Input placeholder="Last Visit Date" {...register('lastVisit')} />
+      <div>
+        <Input 
+          placeholder="Full Name" 
+          {...register('name', { required: 'Full name is required' })} 
+        />
+        {errors.name && <p className="text-sm text-destructive mt-1">{errors.name.message}</p>}
+      </div>
+      <div>
+        <Input 
+          placeholder="Age" 
+          type="number" 
+          {...register('age', { 
+            required: 'Age is required',
+            min: { value: 0, message: 'Age must be positive' },
+            max: { value: 150, message: 'Age must be realistic' }
+          })} 
+        />
+        {errors.age && <p className="text-sm text-destructive mt-1">{errors.age.message}</p>}
+      </div>
+      <div>
+        <Input 
+          placeholder="Phone Number" 
+          {...register('phone', { 
+            required: 'Phone number is required',
+            pattern: { value: /^\+?[\d\s\-\(\)]+$/, message: 'Invalid phone number format' }
+          })} 
+        />
+        {errors.phone && <p className="text-sm text-destructive mt-1">{errors.phone.message}</p>}
+      </div>
+      <Input placeholder="Last Visit Date (optional)" {...register('lastVisit')} />
       <div className="flex justify-end">
-        <Button type="submit" className="btn-gradient">Create Patient</Button>
+        <Button type="submit" className="btn-gradient" disabled={isSubmitting}>
+          {isSubmitting ? 'Creating...' : 'Create Patient'}
+        </Button>
       </div>
     </form>
   );
 }
 
 function AppointmentForm({ onCreated }: { onCreated?: () => void }){
-  const { register, handleSubmit, reset } = useForm();
+  const { register, handleSubmit, reset, formState: { errors, isSubmitting } } = useForm();
   const { toast } = useToast();
   const onSubmit = async (data: any) => {
     try{
@@ -203,22 +310,54 @@ function AppointmentForm({ onCreated }: { onCreated?: () => void }){
   };
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="grid gap-3">
-      <Input placeholder="Patient ID" {...register('patientId')} />
-      <Input placeholder="Appointment Time (ISO format)" {...register('time')} />
-      <Input placeholder="Appointment Type" {...register('type')} />
-      <select {...register('status')} className="input">
-        <option value="pending">Pending</option>
-        <option value="confirmed">Confirmed</option>
-      </select>
+      <div>
+        <Input 
+          placeholder="Patient ID" 
+          type="number"
+          {...register('patientId', { 
+            required: 'Patient ID is required',
+            min: { value: 1, message: 'Patient ID must be positive' }
+          })} 
+        />
+        {errors.patientId && <p className="text-sm text-destructive mt-1">{errors.patientId.message}</p>}
+      </div>
+      <div>
+        <Input 
+          placeholder="Appointment Time (ISO format)" 
+          type="datetime-local"
+          {...register('time', { required: 'Appointment time is required' })} 
+        />
+        {errors.time && <p className="text-sm text-destructive mt-1">{errors.time.message}</p>}
+      </div>
+      <div>
+        <Input 
+          placeholder="Appointment Type" 
+          {...register('type', { required: 'Appointment type is required' })} 
+        />
+        {errors.type && <p className="text-sm text-destructive mt-1">{errors.type.message}</p>}
+      </div>
+      <div>
+        <select 
+          {...register('status', { required: 'Status is required' })} 
+          className="input"
+        >
+          <option value="">Select Status</option>
+          <option value="pending">Pending</option>
+          <option value="confirmed">Confirmed</option>
+        </select>
+        {errors.status && <p className="text-sm text-destructive mt-1">{errors.status.message}</p>}
+      </div>
       <div className="flex justify-end">
-        <Button type="submit" className="btn-gradient">Book Appointment</Button>
+        <Button type="submit" className="btn-gradient" disabled={isSubmitting}>
+          {isSubmitting ? 'Booking...' : 'Book Appointment'}
+        </Button>
       </div>
     </form>
   );
 }
 
 function PaymentForm({ onCreated }: { onCreated?: () => void }){
-  const { register, handleSubmit, reset } = useForm();
+  const { register, handleSubmit, reset, formState: { errors, isSubmitting } } = useForm();
   const { toast } = useToast();
   const onSubmit = async (data: any) => {
     try{
@@ -232,14 +371,111 @@ function PaymentForm({ onCreated }: { onCreated?: () => void }){
   };
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="grid gap-3">
-      <Input placeholder="Patient ID" {...register('patientId')} />
-      <Input placeholder="Amount (KES)" type="number" {...register('amount')} />
-      <select {...register('status')} className="input">
-        <option value="pending">Pending</option>
-        <option value="paid">Paid</option>
-      </select>
+      <div>
+        <Input 
+          placeholder="Patient ID" 
+          type="number"
+          {...register('patientId', { 
+            required: 'Patient ID is required',
+            min: { value: 1, message: 'Patient ID must be positive' }
+          })} 
+        />
+        {errors.patientId && <p className="text-sm text-destructive mt-1">{errors.patientId.message}</p>}
+      </div>
+      <div>
+        <Input 
+          placeholder="Amount (KES)" 
+          type="number" 
+          step="0.01"
+          {...register('amount', { 
+            required: 'Amount is required',
+            min: { value: 0.01, message: 'Amount must be positive' }
+          })} 
+        />
+        {errors.amount && <p className="text-sm text-destructive mt-1">{errors.amount.message}</p>}
+      </div>
+      <div>
+        <select 
+          {...register('status', { required: 'Status is required' })} 
+          className="input"
+        >
+          <option value="">Select Status</option>
+          <option value="pending">Pending</option>
+          <option value="paid">Paid</option>
+        </select>
+        {errors.status && <p className="text-sm text-destructive mt-1">{errors.status.message}</p>}
+      </div>
       <div className="flex justify-end">
-        <Button type="submit" className="btn-gradient">Process Payment</Button>
+        <Button type="submit" className="btn-gradient" disabled={isSubmitting}>
+          {isSubmitting ? 'Processing...' : 'Process Payment'}
+        </Button>
+      </div>
+    </form>
+  );
+}
+
+function StaffForm({ onCreated }: { onCreated?: () => void }){
+  const { register, handleSubmit, reset, formState: { errors, isSubmitting } } = useForm();
+  const { toast } = useToast();
+  const onSubmit = async (data: any) => {
+    try{
+      await createUser({ email: data.email, password: data.password, name: data.name, role: data.role });
+      toast({ title: 'Staff member created successfully' });
+      reset();
+      onCreated && onCreated();
+    }catch(err:any){
+      toast({ title: 'Failed to create staff member', description: err?.message || '' });
+    }
+  };
+  return (
+    <form onSubmit={handleSubmit(onSubmit)} className="grid gap-3">
+      <div>
+        <Input 
+          placeholder="Full Name" 
+          {...register('name', { required: 'Full name is required' })} 
+        />
+        {errors.name && <p className="text-sm text-destructive mt-1">{errors.name.message}</p>}
+      </div>
+      <div>
+        <Input 
+          placeholder="Email" 
+          type="email" 
+          {...register('email', { 
+            required: 'Email is required',
+            pattern: { value: /^\S+@\S+$/i, message: 'Invalid email format' }
+          })} 
+        />
+        {errors.email && <p className="text-sm text-destructive mt-1">{errors.email.message}</p>}
+      </div>
+      <div>
+        <Input 
+          placeholder="Password" 
+          type="password" 
+          {...register('password', { 
+            required: 'Password is required',
+            minLength: { value: 6, message: 'Password must be at least 6 characters' }
+          })} 
+        />
+        {errors.password && <p className="text-sm text-destructive mt-1">{errors.password.message}</p>}
+      </div>
+      <div>
+        <select 
+          {...register('role', { required: 'Role is required' })} 
+          className="input"
+        >
+          <option value="">Select Role</option>
+          <option value="doctor">Doctor</option>
+          <option value="nurse">Nurse</option>
+          <option value="pharmacist">Pharmacist</option>
+          <option value="staff">Staff</option>
+          <option value="admin">Admin</option>
+        </select>
+        {errors.role && <p className="text-sm text-destructive mt-1">{errors.role.message}</p>}
+      </div>
+      <div className="flex justify-end">
+        <Button type="submit" className="btn-gradient" disabled={isSubmitting}>
+          {isSubmitting ? 'Creating...' : 'Create Staff'}
+        </Button>
       </div>
     </form>
   );

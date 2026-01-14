@@ -6,8 +6,7 @@ import { useEffect, useState } from "react";
 import { getAppointments } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from "@/components/ui/dialog";
-import { useForm } from "react-hook-form";
-import { createAppointment } from "@/lib/api";
+import { Input } from "@/components/ui/input";
 
 const Appointments = () => {
   const [appointments, setAppointments] = useState<any[]>([]);
@@ -82,7 +81,7 @@ const Appointments = () => {
 export default Appointments;
 
 function AppointmentForm({ onCreated }: { onCreated?: (a:any)=>void }){
-  const { register, handleSubmit, reset } = useForm();
+  const { register, handleSubmit, reset, formState: { errors, isSubmitting } } = useForm();
   const { toast } = useToast();
   const onSubmit = async (data: any) => {
     try{
@@ -96,15 +95,47 @@ function AppointmentForm({ onCreated }: { onCreated?: (a:any)=>void }){
   };
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="grid gap-3 p-2">
-      <input {...register('patientId')} placeholder="Patient ID" className="input" />
-      <input {...register('time')} placeholder="Time (ISO)" className="input" />
-      <input {...register('type')} placeholder="Type" className="input" />
-      <select {...register('status')} className="input">
-        <option value="pending">pending</option>
-        <option value="confirmed">confirmed</option>
-      </select>
+      <div>
+        <Input 
+          {...register('patientId', { 
+            required: 'Patient ID is required',
+            min: { value: 1, message: 'Patient ID must be positive' }
+          })} 
+          placeholder="Patient ID" 
+          type="number"
+        />
+        {errors.patientId && <p className="text-sm text-destructive mt-1">{errors.patientId.message}</p>}
+      </div>
+      <div>
+        <Input 
+          {...register('time', { required: 'Time is required' })} 
+          placeholder="Time (ISO)" 
+          type="datetime-local"
+        />
+        {errors.time && <p className="text-sm text-destructive mt-1">{errors.time.message}</p>}
+      </div>
+      <div>
+        <Input 
+          {...register('type', { required: 'Type is required' })} 
+          placeholder="Type" 
+        />
+        {errors.type && <p className="text-sm text-destructive mt-1">{errors.type.message}</p>}
+      </div>
+      <div>
+        <select 
+          {...register('status', { required: 'Status is required' })} 
+          className="input"
+        >
+          <option value="">Select Status</option>
+          <option value="pending">pending</option>
+          <option value="confirmed">confirmed</option>
+        </select>
+        {errors.status && <p className="text-sm text-destructive mt-1">{errors.status.message}</p>}
+      </div>
       <div className="flex justify-end">
-        <Button type="submit" className="btn-gradient">Create</Button>
+        <Button type="submit" className="btn-gradient" disabled={isSubmitting}>
+          {isSubmitting ? 'Creating...' : 'Create'}
+        </Button>
       </div>
     </form>
   );

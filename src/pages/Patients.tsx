@@ -91,7 +91,7 @@ const Patients = () => {
 };
 
 function PatientForm({ onCreated }: { onCreated?: (p:any)=>void }){
-  const { register, handleSubmit, reset } = useForm();
+  const { register, handleSubmit, reset, formState: { errors, isSubmitting } } = useForm();
   const { toast } = useToast();
   const onSubmit = async (data: any) => {
     try{
@@ -105,12 +105,40 @@ function PatientForm({ onCreated }: { onCreated?: (p:any)=>void }){
   };
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="grid gap-3">
-      <Input placeholder="Name" {...register('name')} />
-      <Input placeholder="Age" type="number" {...register('age')} />
-      <Input placeholder="Phone" {...register('phone')} />
-      <Input placeholder="Last Visit" {...register('lastVisit')} />
+      <div>
+        <Input 
+          placeholder="Name" 
+          {...register('name', { required: 'Name is required' })} 
+        />
+        {errors.name && <p className="text-sm text-destructive mt-1">{errors.name.message}</p>}
+      </div>
+      <div>
+        <Input 
+          placeholder="Age" 
+          type="number" 
+          {...register('age', { 
+            required: 'Age is required',
+            min: { value: 0, message: 'Age must be positive' },
+            max: { value: 150, message: 'Age must be realistic' }
+          })} 
+        />
+        {errors.age && <p className="text-sm text-destructive mt-1">{errors.age.message}</p>}
+      </div>
+      <div>
+        <Input 
+          placeholder="Phone" 
+          {...register('phone', { 
+            required: 'Phone number is required',
+            pattern: { value: /^\+?[\d\s\-\(\)]+$/, message: 'Invalid phone number format' }
+          })} 
+        />
+        {errors.phone && <p className="text-sm text-destructive mt-1">{errors.phone.message}</p>}
+      </div>
+      <Input placeholder="Last Visit (optional)" {...register('lastVisit')} />
       <div className="flex justify-end gap-2">
-        <Button type="submit" className="btn-gradient">Create</Button>
+        <Button type="submit" className="btn-gradient" disabled={isSubmitting}>
+          {isSubmitting ? 'Creating...' : 'Create'}
+        </Button>
       </div>
     </form>
   );
