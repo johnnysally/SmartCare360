@@ -5,8 +5,7 @@ const { pool } = require('../db'); // <-- fixed
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { v4: uuidv4 } = require('uuid');
-
-const JWT_SECRET = process.env.JWT_SECRET || 'dev_secret';
+const { JWT_SECRET } = require('../config');
 
 /* ===================== LOGIN ===================== */
 router.post('/login', async (req, res) => {
@@ -24,6 +23,8 @@ router.post('/login', async (req, res) => {
     if (!valid) return res.status(401).json({ message: 'Invalid credentials' });
 
     const token = jwt.sign({ id: user.id, email: user.email, role: user.role }, JWT_SECRET, { expiresIn: '8h' });
+    console.log('Login successful - JWT_SECRET length:', JWT_SECRET.length);
+    console.log('Generated token preview:', token.substring(0, 50) + '...');
 
     res.json({
       token,

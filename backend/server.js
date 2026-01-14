@@ -4,13 +4,7 @@ const bodyParser = require('body-parser');
 const cors = require('cors');
 const { init } = require('./db');
 const jwt = require('jsonwebtoken');
-
-const app = express();
-app.use(cors());
-app.use(bodyParser.json());
-
-const PORT = process.env.PORT || 5000;
-const JWT_SECRET = process.env.JWT_SECRET || 'dev_secret';
+const { JWT_SECRET, PORT } = require('./config');
 
 // Initialize DB first, then require routes so they get the initialized db
 (async () => {
@@ -40,6 +34,9 @@ const JWT_SECRET = process.env.JWT_SECRET || 'dev_secret';
         req.user = payload;
         next();
       } catch (e) {
+        console.error('JWT verification failed:', e.message);
+        console.error('JWT_SECRET length:', JWT_SECRET.length);
+        console.error('Token preview:', token.substring(0, 50) + '...');
         return res.status(401).json({ message: 'Invalid token' });
       }
     }
