@@ -69,24 +69,6 @@ app.use(bodyParser.json());
   }
 })();
 
-// (end init wrapper)
-
-// Simple token middleware placeholder (kept for editor readability)
-function requireAuth(req, res, next) {
-  const header = req.headers.authorization;
-  if (!header) return res.status(401).json({ message: 'Missing authorization' });
-  const [type, token] = header.split(' ');
-  if (type !== 'Bearer' || !token) return res.status(401).json({ message: 'Invalid authorization' });
-  try {
-    const payload = jwt.verify(token, JWT_SECRET);
-    req.user = payload;
-    next();
-  } catch (e) {
-    return res.status(401).json({ message: 'Invalid token' });
-  }
-}
-// Note: real route mounting happens after DB init above
-
 // Process-level error handlers to ensure logs are visible
 process.on('uncaughtException', (err) => {
   console.error('Uncaught Exception', err && (err.stack || err.message || err));
