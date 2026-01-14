@@ -22,7 +22,7 @@ router.post('/login', async (req, res) => {
     const valid = bcrypt.compareSync(password, user.password);
     if (!valid) return res.status(401).json({ message: 'Invalid credentials' });
 
-    const token = jwt.sign({ id: user.id, email: user.email, role: user.role }, JWT_SECRET, { expiresIn: '8h' });
+    const token = jwt.sign({ id: user.id, email: user.email, role: user.role }, JWT_SECRET, { expiresIn: '7d' });
     console.log('Login successful - JWT_SECRET length:', JWT_SECRET.length);
     console.log('Generated token preview:', token.substring(0, 50) + '...');
 
