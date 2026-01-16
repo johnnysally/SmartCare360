@@ -7,9 +7,24 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogT
 import { useForm } from "react-hook-form";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { createPatient, createAppointment, createBilling, getPatients, getAppointments, getUsers, getBilling } from "@/lib/api";
+import { createPatient, createAppointment, createBilling, getPatients, getAppointments, getUsers, getBilling, getPatientStats } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 import { useEffect } from "react";
+import {
+  Chart as ChartJS,
+  ArcElement,
+  Tooltip,
+  Legend,
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  PointElement,
+  LineElement,
+  Title,
+} from 'chart.js';
+import { Pie, Bar, Line } from 'react-chartjs-2';
+
+ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement, PointElement, LineElement, Title);
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -20,6 +35,7 @@ import {
 const Dashboard = () => {
   const [dialogOpen, setDialogOpen] = useState<string | null>(null);
   const [patients, setPatients] = useState<any[]>([]);
+  const [backendStats, setBackendStats] = useState<any | null>(null);
   const [appointments, setAppointments] = useState<any[]>([]);
   const [users, setUsers] = useState<any[]>([]);
   const [billing, setBilling] = useState<any[]>([]);
@@ -43,6 +59,13 @@ const Dashboard = () => {
       setAppointments(appointmentsData || []);
       setUsers(usersData || []);
       setBilling(billingData || []);
+      // try fetch backend stats; non-fatal
+      try {
+        const stats = await getPatientStats();
+        setBackendStats(stats || null);
+      } catch (e) {
+        setBackendStats(null);
+      }
     } catch (err: any) {
       toast({ title: 'Failed to load dashboard data', description: err?.message || '' });
     } finally {
@@ -75,6 +98,63 @@ const Dashboard = () => {
     type: "New Patient",
     status: "Registered"
   }));
+
+  // Chart data calculations — prefer backend stats when available
+  let statusLabels: string[] = [];
+  let statusData: number[] = [];
+  let ageLabels: string[] = [];
+  let ageData: number[] = [];
+  let months: string[] = [];
+  let visitsData: number[] = [];
+
+  if (backendStats) {
+    statusLabels = Object.keys(backendStats.statusCounts || {});
+    statusData = Object.values(backendStats.statusCounts || {});
+    ageLabels = Object.keys(backendStats.ageBuckets || {});
+    ageData = Object.values(backendStats.ageBuckets || {});
+    months = (backendStats.visits && backendStats.visits.months) || [];
+    visitsData = (backendStats.visits && backendStats.visits.counts) || [];
+  } else {
+    const statusMap: Record<string, number> = patients.reduce((acc: Record<string, number>, p: any) => {
+      const s = (p.status || 'Unknown');
+      acc[s] = (acc[s] || 0) + 1;
+      return acc;
+    }, {});
+    statusLabels = Object.keys(statusMap);
+    statusData = Object.values(statusMap);
+
+    const _ageBuckets: Record<string, number> = { '0-18': 0, '19-35': 0, '36-60': 0, '61+': 0 };
+    patients.forEach((p: any) => {
+      const age = Number(p.age);
+      if (Number.isFinite(age)) {
+        if (age <= 18) _ageBuckets['0-18']++;
+        else if (age <= 35) _ageBuckets['19-35']++;
+        else if (age <= 60) _ageBuckets['36-60']++;
+        else _ageBuckets['61+']++;
+      }
+    });
+    ageLabels = Object.keys(_ageBuckets);
+    ageData = Object.values(_ageBuckets);
+
+    // visits per month (last 6 months)
+    months = [];
+    const monthCounts: Record<string, number> = {};
+    for (let i = 5; i >= 0; i--) {
+      const d = new Date();
+      d.setMonth(d.getMonth() - i);
+      const key = d.toLocaleString(undefined, { month: 'short', year: 'numeric' });
+      months.push(key);
+      monthCounts[key] = 0;
+    }
+    patients.forEach((p: any) => {
+      if (!p.lastVisit) return;
+      const d = new Date(p.lastVisit);
+      if (isNaN(d.getTime())) return;
+      const key = d.toLocaleString(undefined, { month: 'short', year: 'numeric' });
+      if (monthCounts[key] !== undefined) monthCounts[key]++;
+    });
+    visitsData = months.map(m => monthCounts[m] || 0);
+  }
   return (
     <DashboardLayout title="Dashboard">
       <div className="space-y-6 animate-fade-in">
@@ -209,6 +289,48 @@ const Dashboard = () => {
                 <Clock className="w-5 h-5" />
                 <span className="font-medium">View Queue</span>
               </button>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Charts: Status Pie, Age Bar, Visits Line */}
+        <div className="grid lg:grid-cols-3 gap-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="font-display">Patient Status</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {patients.length === 0 ? (
+                <div className="py-6 text-center text-sm text-muted-foreground">No patient data to display.</div>
+              ) : (
+                <Pie data={{ labels: statusLabels, datasets: [{ data: statusData, backgroundColor: ['#60A5FA','#34D399','#F59E0B','#F87171','#A78BFA'] }] }} />
+              )}
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="font-display">Age Distribution</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {patients.length === 0 ? (
+                <div className="py-6 text-center text-sm text-muted-foreground">No patient data to display.</div>
+              ) : (
+                <Bar data={{ labels: ageLabels, datasets: [{ label: 'Patients', data: ageData, backgroundColor: '#60A5FA' }] }} options={{ responsive: true, plugins: { legend: { display: false } } }} />
+              )}
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="font-display">Visits (Last 6 months)</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {patients.length === 0 ? (
+                <div className="py-6 text-center text-sm text-muted-foreground">No patient data to display.</div>
+              ) : (
+                <Line data={{ labels: months, datasets: [{ label: 'Visits', data: visitsData, borderColor: '#34D399', backgroundColor: 'rgba(52,211,153,0.1)', tension: 0.3 }] }} options={{ responsive: true }} />
+              )}
             </CardContent>
           </Card>
         </div>

@@ -30,6 +30,10 @@ export async function getPatients() {
   return apiFetch('/patients');
 }
 
+export async function getPatientStats() {
+  return apiFetch('/patients/stats');
+}
+
 export async function createPatient(payload) {
   return apiFetch('/patients', { method: 'POST', body: JSON.stringify(payload) });
 }
@@ -107,6 +111,7 @@ export default {
   login,
   signup,
   getPatients,
+  getPatientStats,
   createPatient,
   getAppointments,
   createAppointment,
