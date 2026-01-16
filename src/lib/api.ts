@@ -34,6 +34,20 @@ export async function getPatientStats() {
   return apiFetch('/patients/stats');
 }
 
+// Download CSV report (type: 'patients' | 'billing' | 'pharmacy')
+export async function downloadReport(type: string) {
+  const token = typeof localStorage !== 'undefined' ? localStorage.getItem('sc360_token') : null;
+  const headers: Record<string,string> = {};
+  if (token) headers['Authorization'] = `Bearer ${token}`;
+  const res = await fetch(`${BASE}/${type}/report`, { headers });
+  if (!res.ok) {
+    const body = await res.text().catch(() => '');
+    throw { message: res.statusText || 'Request failed', body };
+  }
+  const blob = await res.blob();
+  return blob;
+}
+
 export async function createPatient(payload) {
   return apiFetch('/patients', { method: 'POST', body: JSON.stringify(payload) });
 }
@@ -112,6 +126,7 @@ export default {
   signup,
   getPatients,
   getPatientStats,
+  downloadReport,
   createPatient,
   getAppointments,
   createAppointment,

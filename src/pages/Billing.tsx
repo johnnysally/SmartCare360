@@ -5,13 +5,14 @@ import { Plus, CreditCard, Smartphone } from "lucide-react";
 import { useEffect, useState } from "react";
 import { getAppointments, getPatients, createBilling } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from "@/components/ui/dialog";
+import { useForm } from 'react-hook-form';
 import { Input } from "@/components/ui/input";
 
 const Billing = () => {
   const [appointments, setAppointments] = useState<any[]>([]);
   const [patients, setPatients] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showBilling, setShowBilling] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -55,18 +56,19 @@ const Billing = () => {
         </div>
 
         <div className="flex gap-3">
-          <Dialog>
-            <DialogTrigger asChild>
-              <Button className="btn-gradient"><Plus className="w-4 h-4 mr-2" />New Invoice</Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>New Invoice</DialogTitle>
-              </DialogHeader>
-              <BillingForm />
-              <DialogFooter />
-            </DialogContent>
-          </Dialog>
+          <Button className="btn-gradient" onClick={() => setShowBilling(true)}><Plus className="w-4 h-4 mr-2" />New Invoice</Button>
+          {showBilling && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center">
+              <div className="fixed inset-0 bg-black/60" onClick={() => setShowBilling(false)} />
+              <div className="z-60 w-full max-w-lg bg-background p-6 rounded-lg shadow-lg">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-semibold">New Invoice</h3>
+                  <Button variant="ghost" size="sm" onClick={() => setShowBilling(false)}>Close</Button>
+                </div>
+                <BillingForm onCreated={() => setShowBilling(false)} />
+              </div>
+            </div>
+          )}
           <Button variant="outline"><Smartphone className="w-4 h-4 mr-2" />M-Pesa</Button>
           <Button variant="outline"><CreditCard className="w-4 h-4 mr-2" />NHIF</Button>
         </div>
@@ -103,7 +105,7 @@ const Billing = () => {
 
 export default Billing;
 
-function BillingForm(){
+function BillingForm({ onCreated }: { onCreated?: () => void }){
   const { register, handleSubmit, reset, formState: { errors, isSubmitting } } = useForm();
   const { toast } = useToast();
   const onSubmit = async (data:any) => {
@@ -111,6 +113,7 @@ function BillingForm(){
       await createBilling({ patientId: data.patientId, amount: Number(data.amount), status: data.status });
       toast({ title: 'Invoice created' });
       reset();
+      onCreated && onCreated();
     }catch(err:any){
       toast({ title: 'Failed to create invoice', description: err?.message || '' });
     }

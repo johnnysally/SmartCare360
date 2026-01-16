@@ -53,4 +53,23 @@ router.delete('/:id', (req, res) => {
   });
 });
 
+// CSV report for pharmacy orders
+router.get('/report', async (req, res) => {
+  const pool = dbModule.pool;
+  if (!pool) return res.status(500).json({ message: 'DB not initialized' });
+  try {
+    const q = `SELECT po.id, po.patientId, p.name as patientName, po.items, po.total, po.status FROM pharmacy_orders po LEFT JOIN patients p ON po.patientId = p.id ORDER BY po.createdat DESC`;
+    const result = await pool.query(q);
+    const rows = result.rows || [];
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader('Content-Disposition', 'attachment; filename="pharmacy_orders_report.csv"');
+    const header = ['id','patientId','patientName','items','total','status'];
+    const lines = [header.join(',')].concat(rows.map(r => [r.id, r.patientid || r.patientId || '', (r.patientname || r.patientName || '').replace(/,/g,' '), (typeof r.items === 'string' ? r.items.replace(/,/g,';') : JSON.stringify(r.items||'')).replace(/\n/g,' '), r.total, r.status].join(',')));
+    res.send(lines.join('\n'));
+  } catch (err) {
+    console.error('Failed to generate pharmacy report', err && err.message);
+    res.status(500).json({ message: 'DB error' });
+  }
+});
+
 module.exports = router;

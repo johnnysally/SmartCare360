@@ -101,3 +101,21 @@ router.delete('/:id', (req, res) => {
 });
 
 module.exports = router;
+
+// CSV export for patients
+router.get('/report', async (req, res) => {
+  const pool = dbModule.pool;
+  if (!pool) return res.status(500).json({ message: 'DB not initialized' });
+  try {
+    const result = await pool.query('SELECT id, name, age, phone, lastvisit as lastvisit, status FROM patients ORDER BY name');
+    const rows = result.rows || [];
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader('Content-Disposition', 'attachment; filename="patients_report.csv"');
+    const header = ['id','name','age','phone','lastVisit','status'];
+    const lines = [header.join(',')].concat(rows.map(r => [r.id, (r.name||'').replace(/,/g,' '), r.age || '', (r.phone||'').replace(/,/g,' '), r.lastvisit || r.lastVisit || '', r.status || ''].join(',')));
+    res.send(lines.join('\n'));
+  } catch (err) {
+    console.error('Failed to generate patients report', err && err.message);
+    res.status(500).json({ message: 'DB error' });
+  }
+});

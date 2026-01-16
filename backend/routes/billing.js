@@ -53,5 +53,25 @@ router.delete('/:id', (req, res) => {
   });
 });
 
+// CSV report for billing
+router.get('/report', async (req, res) => {
+  const pool = dbModule.pool;
+  if (!pool) return res.status(500).json({ message: 'DB not initialized' });
+  try {
+    const q = `SELECT b.id, b.patientId, p.name as patientName, b.amount, b.status, b.createdAt
+      FROM billing b LEFT JOIN patients p ON b.patientId = p.id ORDER BY b.createdAt DESC`;
+    const result = await pool.query(q);
+    const rows = result.rows || [];
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader('Content-Disposition', 'attachment; filename="billing_report.csv"');
+    const header = ['id','patientId','patientName','amount','status','createdAt'];
+    const lines = [header.join(',')].concat(rows.map(r => [r.id,r.patientid || r.patientId || '', (r.patientname || r.patientName || '').replace(/,/g, ' '), r.amount, r.status, r.createdat || r.createdAt].join(',')));
+    res.send(lines.join('\n'));
+  } catch (err) {
+    console.error('Failed to generate billing report', err && err.message);
+    res.status(500).json({ message: 'DB error' });
+  }
+});
+
 module.exports = router;
 

@@ -31,6 +31,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { downloadReport } from '@/lib/api';
 
 const Dashboard = () => {
   const [dialogOpen, setDialogOpen] = useState<string | null>(null);
@@ -294,42 +295,227 @@ const Dashboard = () => {
         </div>
 
         {/* Charts: Status Pie, Age Bar, Visits Line */}
+        <div className="flex items-center justify-end gap-3">
+          <Button onClick={async () => {
+            try {
+              const blob = await downloadReport('patients');
+              const url = URL.createObjectURL(blob);
+              const a = document.createElement('a');
+              a.href = url; a.download = 'patients_report.csv'; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+            } catch (e: any) { toast({ title: 'Failed to download patients report', description: e?.message || '' }); }
+          }}>Download Patients</Button>
+          <Button onClick={async () => {
+            try {
+              const blob = await downloadReport('billing');
+              const url = URL.createObjectURL(blob);
+              const a = document.createElement('a');
+              a.href = url; a.download = 'billing_report.csv'; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+            } catch (e: any) { toast({ title: 'Failed to download billing report', description: e?.message || '' }); }
+          }}>Download Billing</Button>
+        </div>
+
         <div className="grid lg:grid-cols-3 gap-6">
           <Card>
             <CardHeader>
-              <CardTitle className="font-display">Patient Status</CardTitle>
+              <div>
+                <CardTitle className="font-display">Patient Status Distribution</CardTitle>
+                <p className="text-xs text-muted-foreground mt-1">Overview of patient statuses in the system</p>
+              </div>
             </CardHeader>
             <CardContent>
               {patients.length === 0 ? (
                 <div className="py-6 text-center text-sm text-muted-foreground">No patient data to display.</div>
               ) : (
-                <Pie data={{ labels: statusLabels, datasets: [{ data: statusData, backgroundColor: ['#60A5FA','#34D399','#F59E0B','#F87171','#A78BFA'] }] }} />
+                <div>
+                  <Pie 
+                    data={{ 
+                      labels: statusLabels, 
+                      datasets: [{ 
+                        data: statusData, 
+                        backgroundColor: ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6'],
+                        borderColor: '#ffffff',
+                        borderWidth: 2,
+                        hoverOffset: 10
+                      }] 
+                    }} 
+                    options={{
+                      responsive: true,
+                      plugins: {
+                        legend: {
+                          position: 'bottom' as const,
+                          labels: {
+                            usePointStyle: true,
+                            padding: 15,
+                            font: { size: 12, weight: 'bold' }
+                          }
+                        },
+                        tooltip: {
+                          callbacks: {
+                            label: function(context: any) {
+                              const total = context.dataset.data.reduce((a: number, b: number) => a + b, 0);
+                              const percentage = ((context.parsed / total) * 100).toFixed(1);
+                              return `${context.label}: ${context.parsed} (${percentage}%)`;
+                            }
+                          }
+                        }
+                      }
+                    }}
+                  />
+                  <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-950 rounded-lg">
+                    <p className="text-xs text-muted-foreground">
+                      <strong>Total Patients:</strong> {patients.length} patients across all statuses
+                    </p>
+                  </div>
+                </div>
               )}
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader>
-              <CardTitle className="font-display">Age Distribution</CardTitle>
+              <div>
+                <CardTitle className="font-display">Age Group Distribution</CardTitle>
+                <p className="text-xs text-muted-foreground mt-1">Patient demographics by age brackets</p>
+              </div>
             </CardHeader>
             <CardContent>
               {patients.length === 0 ? (
                 <div className="py-6 text-center text-sm text-muted-foreground">No patient data to display.</div>
               ) : (
-                <Bar data={{ labels: ageLabels, datasets: [{ label: 'Patients', data: ageData, backgroundColor: '#60A5FA' }] }} options={{ responsive: true, plugins: { legend: { display: false } } }} />
+                <div>
+                  <Bar 
+                    data={{ 
+                      labels: ageLabels, 
+                      datasets: [{ 
+                        label: 'Number of Patients', 
+                        data: ageData, 
+                        backgroundColor: ['#3B82F6', '#06B6D4', '#10B981', '#F59E0B'],
+                        borderColor: ['#1D4ED8', '#0891B2', '#059669', '#D97706'],
+                        borderWidth: 1,
+                        borderRadius: 8,
+                        hoverBackgroundColor: ['#1E40AF', '#0E7490', '#047857', '#D97706']
+                      }] 
+                    }} 
+                    options={{ 
+                      indexAxis: 'x',
+                      responsive: true, 
+                      plugins: { 
+                        legend: { 
+                          display: true,
+                          labels: {
+                            font: { weight: 'bold' }
+                          }
+                        },
+                        tooltip: {
+                          callbacks: {
+                            label: function(context: any) {
+                              return `${context.parsed.y} patients`;
+                            }
+                          }
+                        }
+                      },
+                      scales: {
+                        y: {
+                          beginAtZero: true,
+                          grid: {
+                            display: true,
+                            color: 'rgba(0, 0, 0, 0.05)'
+                          },
+                          ticks: {
+                            font: { weight: 'bold' }
+                          }
+                        },
+                        x: {
+                          grid: { display: false },
+                          ticks: { font: { weight: 'bold' } }
+                        }
+                      }
+                    }} 
+                  />
+                  <div className="mt-4 p-3 bg-cyan-50 dark:bg-cyan-950 rounded-lg">
+                    <p className="text-xs text-muted-foreground">
+                      <strong>Dominant Age Group:</strong> {ageLabels[ageData.indexOf(Math.max(...ageData))] || 'N/A'} with {Math.max(...ageData)} patients
+                    </p>
+                  </div>
+                </div>
               )}
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader>
-              <CardTitle className="font-display">Visits (Last 6 months)</CardTitle>
+              <div>
+                <CardTitle className="font-display">Patient Visits Trend</CardTitle>
+                <p className="text-xs text-muted-foreground mt-1">Monthly patient visit patterns over the last 6 months</p>
+              </div>
             </CardHeader>
             <CardContent>
               {patients.length === 0 ? (
                 <div className="py-6 text-center text-sm text-muted-foreground">No patient data to display.</div>
               ) : (
-                <Line data={{ labels: months, datasets: [{ label: 'Visits', data: visitsData, borderColor: '#34D399', backgroundColor: 'rgba(52,211,153,0.1)', tension: 0.3 }] }} options={{ responsive: true }} />
+                <div>
+                  <Line 
+                    data={{ 
+                      labels: months, 
+                      datasets: [{ 
+                        label: 'Monthly Visits', 
+                        data: visitsData, 
+                        borderColor: '#10B981',
+                        backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                        tension: 0.4,
+                        fill: true,
+                        pointRadius: 6,
+                        pointBackgroundColor: '#10B981',
+                        pointBorderColor: '#ffffff',
+                        pointBorderWidth: 2,
+                        pointHoverRadius: 8,
+                        borderWidth: 3
+                      }] 
+                    }} 
+                    options={{ 
+                      responsive: true,
+                      plugins: {
+                        legend: {
+                          display: true,
+                          labels: {
+                            font: { weight: 'bold' }
+                          }
+                        },
+                        tooltip: {
+                          backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                          padding: 12,
+                          cornerRadius: 8,
+                          callbacks: {
+                            label: function(context: any) {
+                              return `${context.parsed.y} visits`;
+                            }
+                          }
+                        }
+                      },
+                      scales: {
+                        y: {
+                          beginAtZero: true,
+                          grid: {
+                            display: true,
+                            color: 'rgba(0, 0, 0, 0.05)'
+                          },
+                          ticks: {
+                            font: { weight: 'bold' }
+                          }
+                        },
+                        x: {
+                          grid: { display: false },
+                          ticks: { font: { weight: 'bold' } }
+                        }
+                      }
+                    }} 
+                  />
+                  <div className="mt-4 p-3 bg-green-50 dark:bg-green-950 rounded-lg">
+                    <p className="text-xs text-muted-foreground">
+                      <strong>Total Visits:</strong> {visitsData.reduce((a, b) => a + b, 0)} visits in the last 6 months
+                    </p>
+                  </div>
+                </div>
               )}
             </CardContent>
           </Card>

@@ -13,12 +13,15 @@ import {
   CheckCircle,
 } from "lucide-react";
 import { useEffect, useState } from "react";
-import { getPharmacyOrders } from "@/lib/api";
+import { getPharmacyOrders, createBilling, downloadReport } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
+import { Input } from '@/components/ui/input';
+import { useForm } from 'react-hook-form';
 
 const PharmacyDashboard = () => {
   const [orders, setOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showInvoice, setShowInvoice] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -90,6 +93,31 @@ const PharmacyDashboard = () => {
   return (
     <PharmacyLayout title="Pharmacy Dashboard">
       <div className="space-y-6 animate-fade-in">
+        <div className="flex items-center justify-end gap-2">
+          <Button onClick={() => setShowInvoice(true)}>Create Invoice</Button>
+
+          <Button onClick={async () => {
+            try {
+              const blob = await downloadReport('pharmacy');
+              const url = URL.createObjectURL(blob);
+              const a = document.createElement('a');
+              a.href = url; a.download = 'pharmacy_orders_report.csv'; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+            } catch (e:any) { toast({ title: 'Failed to download report', description: e?.message || '' }); }
+          }}>Download Orders</Button>
+        </div>
+
+        {showInvoice && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center">
+            <div className="fixed inset-0 bg-black/60" onClick={() => setShowInvoice(false)} />
+            <div className="z-60 w-full max-w-lg bg-background p-6 rounded-lg shadow-lg">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold">Create Invoice</h3>
+                <Button variant="ghost" size="sm" onClick={() => setShowInvoice(false)}>Close</Button>
+              </div>
+              <InvoiceForm onCreated={() => { setShowInvoice(false); fetchPharmacyData(); }} />
+            </div>
+          </div>
+        )}
         {/* Stats Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {stats.map((stat, i) => (
@@ -271,3 +299,39 @@ const PharmacyDashboard = () => {
 };
 
 export default PharmacyDashboard;
+
+function InvoiceForm({ onCreated }: { onCreated?: () => void }){
+  const { register, handleSubmit, reset, formState: { errors, isSubmitting } } = useForm();
+  const { toast } = useToast();
+  const onSubmit = async (data: any) => {
+    try {
+      await createBilling({ patientId: data.patientId, amount: Number(data.amount), status: data.status || 'pending' });
+      toast({ title: 'Invoice created' });
+      reset();
+      onCreated && onCreated();
+    } catch (e:any) {
+      toast({ title: 'Failed to create invoice', description: e?.message || '' });
+    }
+  };
+  return (
+    <form onSubmit={handleSubmit(onSubmit)} className="grid gap-3">
+      <div>
+        <Input placeholder="Patient ID" {...register('patientId', { required: 'Patient ID is required' })} />
+        {errors.patientId && <p className="text-sm text-destructive mt-1">{errors.patientId.message}</p>}
+      </div>
+      <div>
+        <Input placeholder="Amount (KES)" type="number" step="0.01" {...register('amount', { required: 'Amount is required' })} />
+        {errors.amount && <p className="text-sm text-destructive mt-1">{errors.amount.message}</p>}
+      </div>
+      <div>
+        <select {...register('status', { required: false })} className="input">
+          <option value="pending">Pending</option>
+          <option value="paid">Paid</option>
+        </select>
+      </div>
+      <div className="flex justify-end">
+        <Button type="submit" className="btn-gradient" disabled={isSubmitting}>{isSubmitting ? 'Creating...' : 'Create Invoice'}</Button>
+      </div>
+    </form>
+  );
+}
