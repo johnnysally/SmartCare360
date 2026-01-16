@@ -7,7 +7,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogT
 import { useForm } from "react-hook-form";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { createPatient, createAppointment, createBilling, getPatients, getAppointments, getUsers, getBilling, createUser } from "@/lib/api";
+import { createPatient, createAppointment, createBilling, getPatients, getAppointments, getUsers, getBilling } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 import { useEffect } from "react";
 import {
@@ -164,22 +164,6 @@ const Dashboard = () => {
                         <DialogTitle>Add New Patient</DialogTitle>
                       </DialogHeader>
                       <PatientForm onCreated={() => { setDialogOpen(null); fetchDashboardData(); }} />
-                      <DialogFooter />
-                    </DialogContent>
-                  </Dialog>
-
-                  <Dialog open={dialogOpen === 'staff'} onOpenChange={(open) => setDialogOpen(open ? 'staff' : null)}>
-                    <DialogTrigger asChild>
-                      <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-                        <UserPlus className="w-4 h-4 mr-2" />
-                        Add Staff
-                      </DropdownMenuItem>
-                    </DialogTrigger>
-                    <DialogContent>
-                      <DialogHeader>
-                        <DialogTitle>Create Staff Member</DialogTitle>
-                      </DialogHeader>
-                      <StaffForm onCreated={() => { setDialogOpen(null); fetchDashboardData(); }} />
                       <DialogFooter />
                     </DialogContent>
                   </Dialog>
@@ -408,73 +392,6 @@ function PaymentForm({ onCreated }: { onCreated?: () => void }){
       <div className="flex justify-end">
         <Button type="submit" className="btn-gradient" disabled={isSubmitting}>
           {isSubmitting ? 'Processing...' : 'Process Payment'}
-        </Button>
-      </div>
-    </form>
-  );
-}
-
-function StaffForm({ onCreated }: { onCreated?: () => void }){
-  const { register, handleSubmit, reset, formState: { errors, isSubmitting } } = useForm();
-  const { toast } = useToast();
-  const onSubmit = async (data: any) => {
-    try{
-      await createUser({ email: data.email, password: data.password, name: data.name, role: data.role });
-      toast({ title: 'Staff member created successfully' });
-      reset();
-      onCreated && onCreated();
-    }catch(err:any){
-      toast({ title: 'Failed to create staff member', description: err?.message || '' });
-    }
-  };
-  return (
-    <form onSubmit={handleSubmit(onSubmit)} className="grid gap-3">
-      <div>
-        <Input 
-          placeholder="Full Name" 
-          {...register('name', { required: 'Full name is required' })} 
-        />
-        {errors.name && <p className="text-sm text-destructive mt-1">{errors.name.message}</p>}
-      </div>
-      <div>
-        <Input 
-          placeholder="Email" 
-          type="email" 
-          {...register('email', { 
-            required: 'Email is required',
-            pattern: { value: /^\S+@\S+$/i, message: 'Invalid email format' }
-          })} 
-        />
-        {errors.email && <p className="text-sm text-destructive mt-1">{errors.email.message}</p>}
-      </div>
-      <div>
-        <Input 
-          placeholder="Password" 
-          type="password" 
-          {...register('password', { 
-            required: 'Password is required',
-            minLength: { value: 6, message: 'Password must be at least 6 characters' }
-          })} 
-        />
-        {errors.password && <p className="text-sm text-destructive mt-1">{errors.password.message}</p>}
-      </div>
-      <div>
-        <select 
-          {...register('role', { required: 'Role is required' })} 
-          className="input"
-        >
-          <option value="">Select Role</option>
-          <option value="doctor">Doctor</option>
-          <option value="nurse">Nurse</option>
-          <option value="pharmacist">Pharmacist</option>
-          <option value="staff">Staff</option>
-          <option value="admin">Admin</option>
-        </select>
-        {errors.role && <p className="text-sm text-destructive mt-1">{errors.role.message}</p>}
-      </div>
-      <div className="flex justify-end">
-        <Button type="submit" className="btn-gradient" disabled={isSubmitting}>
-          {isSubmitting ? 'Creating...' : 'Create Staff'}
         </Button>
       </div>
     </form>

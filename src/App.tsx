@@ -96,6 +96,13 @@ import Specialists from "./pages/referral/Specialists";
 import Partners from "./pages/referral/Partners";
 import ExternalResults from "./pages/referral/ExternalResults";
 
+// Pharmacy Pages
+import PharmacyDashboard from "./pages/pharmacy/PharmacyDashboard";
+import Orders from "./pages/pharmacy/Orders";
+import Inventory from "./pages/pharmacy/Inventory";
+import PharmacyAnalytics from "./pages/pharmacy/Analytics";
+import DrugReports from "./pages/pharmacy/DrugReports";
+
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -193,6 +200,13 @@ const App = () => (
           <Route path="/referral/specialists" element={<ProtectedRoute><Specialists /></ProtectedRoute>} />
           <Route path="/referral/partners" element={<ProtectedRoute><Partners /></ProtectedRoute>} />
           <Route path="/referral/results" element={<ProtectedRoute><ExternalResults /></ProtectedRoute>} />
+          
+          {/* Pharmacy Routes */}
+          <Route path="/pharmacy/dashboard" element={<ProtectedRoute><PharmacyDashboard /></ProtectedRoute>} />
+          <Route path="/pharmacy/orders" element={<ProtectedRoute><Orders /></ProtectedRoute>} />
+          <Route path="/pharmacy/inventory" element={<ProtectedRoute><Inventory /></ProtectedRoute>} />
+          <Route path="/pharmacy/drug-reports" element={<ProtectedRoute><DrugReports /></ProtectedRoute>} />
+          <Route path="/pharmacy/analytics" element={<ProtectedRoute><PharmacyAnalytics /></ProtectedRoute>} />
           
           <Route path="*" element={<NotFound />} />
         </Routes>

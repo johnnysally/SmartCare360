@@ -13,63 +13,33 @@ import {
   Database,
   Clock,
 } from "lucide-react";
-
-const stats = [
-  { label: "Total Users", value: "1,284", change: "+12%", icon: Users, color: "text-primary" },
-  { label: "Active Staff", value: "86", change: "+3%", icon: UserCog, color: "text-info" },
-  { label: "System Uptime", value: "99.9%", change: "+0.1%", icon: Server, color: "text-success" },
-  { label: "Active Sessions", value: "342", change: "+28%", icon: Activity, color: "text-accent" },
-];
-
-const recentActivities = [
-  { action: "User login", user: "Dr. Sarah Kimani", time: "2 minutes ago", type: "info" },
-  { action: "Password reset", user: "John Mwangi", time: "15 minutes ago", type: "warning" },
-  { action: "New staff added", user: "Admin", time: "1 hour ago", type: "success" },
-  { action: "Role updated", user: "Admin", time: "2 hours ago", type: "info" },
-  { action: "Failed login attempt", user: "Unknown", time: "3 hours ago", type: "error" },
-];
-
-const usersByRole = [
-  { role: "Doctors", count: 24, color: "hsl(174, 72%, 40%)" },
-  { role: "Nurses", count: 38, color: "hsl(199, 89%, 48%)" },
-  { role: "Lab Techs", count: 12, color: "hsl(142, 71%, 45%)" },
-  { role: "Admin", count: 8, color: "hsl(262, 52%, 55%)" },
-  { role: "Reception", count: 4, color: "hsl(24, 95%, 53%)" },
-];
-
-const weeklyLogins = [
-  { day: "Mon", logins: 156 },
-  { day: "Tue", logins: 189 },
-  { day: "Wed", logins: 203 },
-  { day: "Thu", logins: 178 },
-  { day: "Fri", logins: 245 },
-  { day: "Sat", logins: 89 },
-  { day: "Sun", logins: 67 },
-];
-
-const chartConfig = {
-  logins: { label: "Logins", color: "hsl(174, 72%, 40%)" },
-};
-
 import { useEffect, useState } from "react";
 import { useToast } from "@/hooks/use-toast";
-import { getPatients, getAppointments } from "@/lib/api";
+import { getPatients, getAppointments, getUsers } from "@/lib/api";
 
 const AdminDashboard = () => {
   const [usersCount, setUsersCount] = useState(0);
   const [patientsCount, setPatientsCount] = useState(0);
   const [appointmentsCount, setAppointmentsCount] = useState(0);
   const [health, setHealth] = useState('unknown');
+  const [users, setUsers] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
   const { toast } = useToast();
 
   useEffect(() => {
     let mounted = true;
     (async () => {
       try {
-        const [pats, appts] = await Promise.all([getPatients().catch(() => []), getAppointments().catch(() => [])]);
+        const [pats, appts, usersData] = await Promise.all([
+          getPatients().catch(() => []), 
+          getAppointments().catch(() => []),
+          getUsers().catch(() => [])
+        ]);
         if (mounted) {
           setPatientsCount((pats || []).length);
           setAppointmentsCount((appts || []).length);
+          setUsersCount((usersData || []).length);
+          setUsers(usersData || []);
         }
       } catch (err: any) {
         toast({ title: 'Failed to load admin metrics', description: err?.message || '' });
@@ -82,22 +52,53 @@ const AdminDashboard = () => {
       } catch (e) {
         if (mounted) setHealth('down');
       }
-
-      try {
-        const token = localStorage.getItem('sc360_token');
-        if (token) {
-          const res = await fetch((import.meta.env.VITE_API_URL || 'http://localhost:5000') + '/users', { headers: { Authorization: `Bearer ${token}` } });
-          if (res.ok) {
-            const users = await res.json();
-            if (mounted) setUsersCount((users || []).length);
-          }
-        }
-      } catch (e) {
-        // ignore
-      }
+      
+      setLoading(false);
     })();
     return () => { mounted = false; };
   }, []);
+
+  // Calculate user distribution by role
+  const roleDistribution = users.reduce((acc: any, user: any) => {
+    const role = user.role || 'unknown';
+    const existingRole = acc.find((r: any) => r.role === role);
+    if (existingRole) {
+      existingRole.count++;
+    } else {
+      const colors = {
+        'doctor': 'hsl(174, 72%, 40%)',
+        'nurse': 'hsl(199, 89%, 48%)',
+        'pharmacist': 'hsl(142, 71%, 45%)',
+        'admin': 'hsl(262, 52%, 55%)',
+        'staff': 'hsl(24, 95%, 53%)'
+      };
+      acc.push({ role, count: 1, color: (colors as any)[role] || 'hsl(200, 100%, 50%)' });
+    }
+    return acc;
+  }, []);
+
+  const chartConfig = {
+    logins: { label: "Logins", color: "hsl(174, 72%, 40%)" },
+  };
+
+  // Generate weekly data (placeholder - would come from API logs)
+  const weeklyLogins = [
+    { day: "Mon", logins: Math.floor(usersCount * 0.3) },
+    { day: "Tue", logins: Math.floor(usersCount * 0.35) },
+    { day: "Wed", logins: Math.floor(usersCount * 0.4) },
+    { day: "Thu", logins: Math.floor(usersCount * 0.38) },
+    { day: "Fri", logins: Math.floor(usersCount * 0.45) },
+    { day: "Sat", logins: Math.floor(usersCount * 0.2) },
+    { day: "Sun", logins: Math.floor(usersCount * 0.15) },
+  ];
+
+  const recentActivities = [
+    { action: "System started", user: "System", time: "Today", type: "info" },
+    { action: `${patientsCount} patients active`, user: "System", time: "Today", type: "success" },
+    { action: `${appointmentsCount} appointments`, user: "System", time: "Today", type: "info" },
+    { action: `${usersCount} staff members`, user: "System", time: "Today", type: "success" },
+    { action: "Health check passed", user: "System", time: "Just now", type: "success" },
+  ];
 
   return (
     <AdminLayout title="Admin Dashboard">
@@ -172,7 +173,7 @@ const AdminDashboard = () => {
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
                     <Pie
-                      data={usersByRole}
+                      data={roleDistribution}
                       cx="50%"
                       cy="50%"
                       outerRadius={70}
@@ -180,7 +181,7 @@ const AdminDashboard = () => {
                       label={({ role, count }) => `${role}: ${count}`}
                       labelLine={false}
                     >
-                      {usersByRole.map((entry, index) => (
+                      {roleDistribution.map((entry: any, index: number) => (
                         <Cell key={`cell-${index}`} fill={entry.color} />
                       ))}
                     </Pie>

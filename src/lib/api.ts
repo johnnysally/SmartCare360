@@ -58,6 +58,14 @@ export async function createPharmacyOrder(payload) {
   return apiFetch('/pharmacy', { method: 'POST', body: JSON.stringify(payload) });
 }
 
+export async function updatePharmacyOrder(id, payload) {
+  return apiFetch(`/pharmacy/${id}`, { method: 'PUT', body: JSON.stringify(payload) });
+}
+
+export async function deletePharmacyOrder(id) {
+  return apiFetch(`/pharmacy/${id}`, { method: 'DELETE' });
+}
+
 export async function getTelemedicine() {
   return apiFetch('/telemedicine');
 }
@@ -106,6 +114,8 @@ export default {
   createBilling,
   getPharmacyOrders,
   createPharmacyOrder,
+  updatePharmacyOrder,
+  deletePharmacyOrder,
   getTelemedicine,
   createTelemedicine,
   getReferrals,

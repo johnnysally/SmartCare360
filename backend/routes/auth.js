@@ -67,7 +67,7 @@ router.post('/signup', async (req, res) => {
     const result = await pool.query(insertQuery, values);
     const user = result.rows[0];
 
-    const token = jwt.sign({ id: user.id, email: user.email, role: user.role }, JWT_SECRET, { expiresIn: '8h' });
+    const token = jwt.sign({ id: user.id, email: user.email, role: user.role }, JWT_SECRET, { expiresIn: '7d' });
 
     res.json({ token, user });
   } catch (err) {
