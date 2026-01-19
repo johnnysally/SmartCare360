@@ -451,16 +451,16 @@ const DoctorMedications = () => {
                 <p className="text-xs text-muted-foreground">Optional - Add any special notes or warnings</p>
               </div>
 
-              <div className="flex flex-col sm:flex-row gap-3">
+              <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
                 <Button 
                   onClick={handleSubmit} 
-                  className="flex-1 btn-gradient" 
+                  className="w-full sm:flex-1 btn-gradient h-10" 
                   disabled={loading || !form.patientId || !form.drugName || !form.dose || !form.startTime}
                 >
                   <Save className="w-4 h-4 mr-2" />
-                  {loading ? "Saving..." : "Prescribe Medication"}
+                  {loading ? "Saving..." : "Prescribe"}
                 </Button>
-                <Button onClick={resetForm} variant="outline" className="flex-1">
+                <Button onClick={resetForm} variant="outline" className="w-full sm:flex-1 h-10">
                   Cancel
                 </Button>
               </div>
@@ -470,7 +470,7 @@ const DoctorMedications = () => {
 
         {/* Add Prescription Button */}
         {!showForm && (
-          <Button className="btn-gradient" onClick={() => setShowForm(true)}>
+          <Button className="btn-gradient w-full sm:w-auto h-10" onClick={() => setShowForm(true)}>
             <Plus className="w-4 h-4 mr-2" />
             New Prescription
           </Button>
@@ -585,12 +585,12 @@ const DoctorMedications = () => {
                               {med.status.charAt(0).toUpperCase() + med.status.slice(1)}
                             </Badge>
                           </td>
-                          <td className="p-2 flex gap-1 flex-wrap">
+                          <td className="p-2 flex gap-1 flex-wrap items-center">
                             <Button
                               size="sm"
                               variant="ghost"
                               onClick={() => setSelectedMedication(med)}
-                              className="h-8 text-blue-600 hover:text-blue-700"
+                              className="h-8 px-2 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
                               title="View Details"
                             >
                               <Eye className="w-4 h-4" />
@@ -598,19 +598,19 @@ const DoctorMedications = () => {
                             {med.status === "pending" && (
                               <Button
                                 size="sm"
-                                className="bg-green-600 hover:bg-green-700 text-white h-8"
+                                className="bg-green-600 hover:bg-green-700 text-white h-8 px-2 text-xs"
                                 onClick={() => handleSendToPharmacy(med.id)}
                                 disabled={loading}
                                 title="Send to Pharmacy"
                               >
-                                <span className="hidden sm:inline">Send</span>
+                                <span>Send</span>
                               </Button>
                             )}
                             <Button
                               size="sm"
                               variant="ghost"
                               onClick={() => handleDelete(med.id)}
-                              className="h-8 text-red-600 hover:text-red-700"
+                              className="h-8 px-2 text-red-600 hover:text-red-700 hover:bg-red-50"
                               title="Delete"
                             >
                               <Trash2 className="w-4 h-4" />
@@ -672,15 +672,15 @@ const DoctorMedications = () => {
                             size="sm"
                             variant="outline"
                             onClick={() => setSelectedMedication(med)}
-                            className="flex-1"
+                            className="flex-1 text-xs sm:text-sm h-9"
                           >
-                            <Eye className="w-4 h-4 mr-1" />
+                            <Eye className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
                             View
                           </Button>
                           {med.status === "pending" && (
                             <Button
                               size="sm"
-                              className="flex-1 bg-green-600 hover:bg-green-700 text-white"
+                              className="flex-1 bg-green-600 hover:bg-green-700 text-white text-xs sm:text-sm h-9"
                               onClick={() => handleSendToPharmacy(med.id)}
                               disabled={loading}
                             >
@@ -691,9 +691,9 @@ const DoctorMedications = () => {
                             size="sm"
                             variant="outline"
                             onClick={() => handleDelete(med.id)}
-                            className="text-red-600 hover:text-red-700"
+                            className="text-red-600 hover:text-red-700 text-xs sm:text-sm h-9"
                           >
-                            <Trash2 className="w-4 h-4" />
+                            <Trash2 className="w-3 h-3 sm:w-4 sm:h-4" />
                           </Button>
                         </div>
                       </CardContent>
