@@ -60,6 +60,34 @@ export async function createAppointment(payload) {
   return apiFetch('/appointments', { method: 'POST', body: JSON.stringify(payload) });
 }
 
+export async function getQueue() {
+  return apiFetch('/queue');
+}
+
+export async function getQueueStats() {
+  return apiFetch('/queue/stats');
+}
+
+export async function callNextPatient() {
+  return apiFetch('/queue/call', { method: 'POST', body: JSON.stringify({}) });
+}
+
+export async function completeAppointment(id) {
+  return apiFetch(`/queue/${id}/complete`, { method: 'POST', body: JSON.stringify({}) });
+}
+
+export async function skipPatient(id, reason) {
+  return apiFetch(`/queue/${id}/skip`, { method: 'POST', body: JSON.stringify({ reason }) });
+}
+
+export async function updateQueueStatus(id, status) {
+  return apiFetch(`/queue/${id}/status`, { method: 'PUT', body: JSON.stringify({ status }) });
+}
+
+export async function removeFromQueue(id) {
+  return apiFetch(`/queue/${id}`, { method: 'DELETE' });
+}
+
 export async function getBilling() {
   return apiFetch('/billing');
 }
@@ -130,6 +158,13 @@ export default {
   createPatient,
   getAppointments,
   createAppointment,
+  getQueue,
+  getQueueStats,
+  callNextPatient,
+  completeAppointment,
+  skipPatient,
+  updateQueueStatus,
+  removeFromQueue,
   getBilling,
   createBilling,
   getPharmacyOrders,

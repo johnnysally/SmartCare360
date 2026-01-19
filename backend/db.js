@@ -78,7 +78,10 @@ async function init() {
       patientId TEXT,
       time TEXT,
       type TEXT,
-      status TEXT
+      status TEXT,
+      called_at TEXT,
+      completed_at TEXT,
+      skip_reason TEXT
     )`,
     `CREATE TABLE IF NOT EXISTS consultations (
       id TEXT PRIMARY KEY,
