@@ -157,14 +157,6 @@ export async function getPatientNotifications(patientId) {
   return apiFetch(`/queues/notifications/${patientId}`);
 }
 
-export async function callNextPatient() {
-  return apiFetch('/queue/call', { method: 'POST', body: JSON.stringify({}) });
-}
-
-export async function callNextPatient() {
-  return apiFetch('/queue/call', { method: 'POST', body: JSON.stringify({}) });
-}
-
 export async function completeAppointment(id) {
   return apiFetch(`/queue/${id}/complete`, { method: 'POST', body: JSON.stringify({}) });
 }

@@ -52,7 +52,7 @@ export const QueueManagement = ({ compact = false, showActions = true, maxItems 
 
   const handleCallNext = async () => {
     try {
-      const called = await callNextPatient();
+      const called = await callNextPatient('OPD', 'staff-001');
       setAppointments(prev => prev.map(a => a.id === called.id ? called : a));
       toast({ title: 'Patient called', description: `${called.patientId} has been called` });
       await loadQueue();

@@ -5,8 +5,10 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { UserCheck, Clock, CheckCircle, AlertTriangle, RefreshCw, Send } from 'lucide-react';
-import { getDepartmentQueue, callNextPatient, completeService, setPriorityLevel, DEPARTMENTS } from '@/lib/api';
+import { getDepartmentQueue, callNextPatient, completeService, setPriorityLevel } from '@/lib/api';
 import { useToast } from '@/hooks/use-toast';
+
+const DEPARTMENTS = ['OPD', 'Emergency', 'Laboratory', 'Radiology', 'Pharmacy', 'Billing'];
 
 interface DepartmentQueueManagerProps {
   department: string;
