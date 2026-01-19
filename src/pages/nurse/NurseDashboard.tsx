@@ -10,10 +10,12 @@ import {
   Clock,
   ArrowRight,
   Activity,
-  CheckCircle2
+  CheckCircle2,
+  UserCheck,
+  CheckCircle
 } from "lucide-react";
 import { useEffect, useState } from "react";
-import { getPatients, getAppointments } from "@/lib/api";
+import { getPatients, getAppointments, getAllQueues, callNextPatient, completeService } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 
@@ -21,20 +23,27 @@ const NurseDashboard = () => {
   const [patients, setPatients] = useState<any[]>([]);
   const [appointments, setAppointments] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [allQueues, setAllQueues] = useState<any>({});
   const { toast } = useToast();
 
   useEffect(() => {
     fetchDashboardData();
+    const interval = setInterval(() => {
+      loadQueues();
+    }, 10000);
+    return () => clearInterval(interval);
   }, []);
 
   const fetchDashboardData = async () => {
     try {
-      const [patientsData, appointmentsData] = await Promise.all([
+      const [patientsData, appointmentsData, queuesData] = await Promise.all([
         getPatients().catch(() => []),
-        getAppointments().catch(() => [])
+        getAppointments().catch(() => []),
+        getAllQueues().catch(() => ({}))
       ]);
       setPatients(patientsData || []);
       setAppointments(appointmentsData || []);
+      setAllQueues(queuesData || {});
     } catch (err: any) {
       toast({ title: 'Failed to load dashboard data', description: err?.message || '' });
     } finally {
@@ -42,10 +51,44 @@ const NurseDashboard = () => {
     }
   };
 
+  const loadQueues = async () => {
+    try {
+      const queuesData = await getAllQueues();
+      setAllQueues(queuesData || {});
+    } catch (err: any) {
+      toast({ title: 'Failed to load queues', description: err?.message || '', variant: 'destructive' });
+    }
+  };
+
+  const handleCallNext = async () => {
+    try {
+      await callNextPatient('Emergency', 'nurse-001');
+      toast({ title: 'Patient called', description: 'Next patient has been called' });
+      await loadQueues();
+    } catch (err: any) {
+      toast({ title: 'Error calling patient', description: err?.message || '', variant: 'destructive' });
+    }
+  };
+
+  const handleCompleteService = async (queueId: string) => {
+    try {
+      await completeService(queueId);
+      toast({ title: 'Service completed', description: 'Patient marked as served' });
+      await loadQueues();
+    } catch (err: any) {
+      toast({ title: 'Error completing service', description: err?.message || '', variant: 'destructive' });
+    }
+  };
+
   // Calculate stats from real data
   const assignedPatients = patients.length;
   const pendingAppointments = appointments.filter(a => a.status === 'pending' || a.status === 'confirmed').length;
   const criticalAlerts = patients.filter((p: any) => p.status === 'Critical').length;
+
+  const currentQueue = allQueues['Emergency'] || [];
+  const waitingPatients = currentQueue.filter((p: any) => p.status === 'waiting');
+  const servingPatients = currentQueue.filter((p: any) => p.status === 'serving');
+  const completedPatients = currentQueue.filter((p: any) => p.status === 'completed');
 
   const patientList = patients.slice(0, 4).map((patient: any) => ({
     name: patient.name,
@@ -91,43 +134,86 @@ const NurseDashboard = () => {
       </div>
 
       <div className="grid lg:grid-cols-2 gap-6">
-        {/* Patient List */}
+        {/* Emergency Queue */}
         <Card>
           <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle className="flex items-center gap-2">
-              <Users className="w-5 h-5 text-success" />
-              My Patients
+              <UserCheck className="w-5 h-5 text-destructive" />
+              Emergency Queue
             </CardTitle>
-            <Button variant="ghost" size="sm">
-              View All <ArrowRight className="w-4 h-4 ml-1" />
-            </Button>
           </CardHeader>
-          <CardContent className="space-y-3">
+          <CardContent>
             {loading ? (
-              <div className="py-6 text-center text-sm text-muted-foreground">Loading patients...</div>
-            ) : patientList.length === 0 ? (
-              <div className="py-6 text-center text-sm text-muted-foreground">No patients assigned</div>
+              <div className="py-8 text-center text-sm text-muted-foreground">Loading queue...</div>
+            ) : currentQueue.length === 0 ? (
+              <div className="py-8 text-center text-sm text-muted-foreground">No patients in queue</div>
             ) : (
-              patientList.map((patient, i) => (
-                <div key={i} className="flex items-center justify-between p-4 rounded-lg border hover:bg-muted/50 transition-colors">
-                  <div className="flex items-center gap-4">
-                    <div className={`w-3 h-3 rounded-full ${patient.status === "Critical" ? "bg-destructive animate-pulse" : patient.status === "Monitoring" ? "bg-warning" : "bg-success"}`} />
-                    <div>
-                      <div className="font-medium">{patient.name}</div>
-                      <div className="text-sm text-muted-foreground">{patient.bed}</div>
-                    </div>
+              <div className="space-y-4">
+                {/* Call Next Button */}
+                {waitingPatients.length > 0 && (
+                  <Button 
+                    onClick={handleCallNext} 
+                    className="w-full btn-gradient mb-4"
+                    size="lg"
+                  >
+                    <UserCheck className="w-4 h-4 mr-2" />
+                    Call Next Patient ({waitingPatients.length} waiting)
+                  </Button>
+                )}
+
+                {/* Now Serving - Current Patient */}
+                {servingPatients.length > 0 && (
+                  <div className="space-y-2">
+                    <h4 className="font-semibold text-destructive text-sm">Now Attending</h4>
+                    {servingPatients.map((p: any) => (
+                      <div key={p.id} className="flex items-center justify-between p-4 rounded-lg border-2 border-destructive/30 bg-destructive/5">
+                        <div className="flex items-center gap-3 flex-1">
+                          <div className="w-10 h-10 rounded-full bg-destructive flex items-center justify-center font-bold text-white">!</div>
+                          <div className="flex-1">
+                            <div className="font-semibold">{p.patient_name}</div>
+                            <div className="text-xs text-muted-foreground flex items-center gap-2">
+                              <Clock className="w-3 h-3" />
+                              Queue #{p.queue_number}
+                            </div>
+                          </div>
+                        </div>
+                        <Button 
+                          size="sm" 
+                          className="btn-gradient"
+                          onClick={() => handleCompleteService(p.id)}
+                        >
+                          <CheckCircle className="w-4 h-4 mr-1" />
+                          Done
+                        </Button>
+                      </div>
+                    ))}
                   </div>
-                  <div className="flex items-center gap-3">
-                    <div className="text-right">
-                      <div className="text-sm text-muted-foreground">Status</div>
-                      <div className="text-sm font-medium">{patient.status}</div>
-                    </div>
-                    {patient.alert && (
-                      <AlertTriangle className="w-5 h-5 text-destructive" />
+                )}
+
+                {/* Waiting Patients Queue */}
+                {waitingPatients.length > 0 && (
+                  <div className="space-y-2">
+                    <h4 className="font-semibold text-yellow-700 text-sm">Waiting ({waitingPatients.length})</h4>
+                    {waitingPatients.slice(0, 4).map((p: any, idx: number) => (
+                      <div key={p.id} className={`flex items-center justify-between p-3 rounded-lg border-2 ${idx === 0 ? "border-primary bg-primary/5" : "border-yellow-200 bg-yellow-50"}`}>
+                        <div className="flex items-center gap-3 flex-1">
+                          <div className="w-8 h-8 rounded-full bg-yellow-100 flex items-center justify-center font-bold text-yellow-700 text-sm">{idx + 1}</div>
+                          <div className="flex-1">
+                            <div className="font-semibold text-sm">{p.patient_name}</div>
+                            <div className="text-xs text-muted-foreground">Queue #{p.queue_number}</div>
+                          </div>
+                        </div>
+                        {p.priority && <Badge variant={p.priority === 1 ? 'destructive' : 'outline'} className="text-xs">P{p.priority}</Badge>}
+                      </div>
+                    ))}
+                    {waitingPatients.length > 4 && (
+                      <div className="text-xs text-muted-foreground text-center p-2">
+                        +{waitingPatients.length - 4} more waiting
+                      </div>
                     )}
                   </div>
-                </div>
-              ))
+                )}
+              </div>
             )}
           </CardContent>
         </Card>

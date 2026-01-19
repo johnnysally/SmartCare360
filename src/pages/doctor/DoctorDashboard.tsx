@@ -10,34 +10,73 @@ import {
   CheckCircle2,
   Stethoscope,
   TrendingUp,
+  UserCheck,
+  ChevronRight,
+  CheckCircle
 } from "lucide-react";
 import { useEffect, useState } from "react";
-import { getAppointments, getPatients } from "@/lib/api";
+import { getAppointments, getPatients, getAllQueues, callNextPatient, completeService } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 
 const DoctorDashboard = () => {
   const [appointments, setAppointments] = useState<any[]>([]);
   const [patients, setPatients] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [allQueues, setAllQueues] = useState<any>({});
   const { toast } = useToast();
   const currentUser = JSON.parse(localStorage.getItem('sc360_user') || '{}');
 
   useEffect(() => {
     fetchDashboardData();
+    const interval = setInterval(() => {
+      loadQueues();
+    }, 10000);
+    return () => clearInterval(interval);
   }, []);
 
   const fetchDashboardData = async () => {
     try {
-      const [appointmentsData, patientsData] = await Promise.all([
+      const [appointmentsData, patientsData, queuesData] = await Promise.all([
         getAppointments().catch(() => []),
-        getPatients().catch(() => [])
+        getPatients().catch(() => []),
+        getAllQueues().catch(() => ({}))
       ]);
       setAppointments(appointmentsData || []);
       setPatients(patientsData || []);
+      setAllQueues(queuesData || {});
     } catch (err: any) {
       toast({ title: 'Failed to load dashboard data', description: err?.message || '' });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadQueues = async () => {
+    try {
+      const queuesData = await getAllQueues();
+      setAllQueues(queuesData || {});
+    } catch (err: any) {
+      toast({ title: 'Failed to load queues', description: err?.message || '', variant: 'destructive' });
+    }
+  };
+
+  const handleCallNext = async () => {
+    try {
+      await callNextPatient('OPD', 'doctor-001');
+      toast({ title: 'Patient called', description: 'Next patient has been called' });
+      await loadQueues();
+    } catch (err: any) {
+      toast({ title: 'Error calling patient', description: err?.message || '', variant: 'destructive' });
+    }
+  };
+
+  const handleCompleteService = async (queueId: string) => {
+    try {
+      await completeService(queueId);
+      toast({ title: 'Service completed', description: 'Patient marked as served' });
+      await loadQueues();
+    } catch (err: any) {
+      toast({ title: 'Error completing service', description: err?.message || '', variant: 'destructive' });
     }
   };
 
@@ -49,6 +88,11 @@ const DoctorDashboard = () => {
   const confirmedAppointments = appointments.filter(a => a.status === 'confirmed');
   const pendingAppointments = appointments.filter(a => a.status === 'pending');
   const recentVisitPatients = patients.slice(-3).reverse();
+
+  const currentQueue = allQueues['OPD'] || [];
+  const waitingPatients = currentQueue.filter((p: any) => p.status === 'waiting');
+  const servingPatients = currentQueue.filter((p: any) => p.status === 'serving');
+  const completedPatients = currentQueue.filter((p: any) => p.status === 'completed');
 
   const upcomingAppointments = todayAppointments.slice(0, 4).map((apt: any) => ({
     patient: apt.patientName || `Patient ${apt.patientId}`,
@@ -145,45 +189,104 @@ const DoctorDashboard = () => {
 
         {/* Main Content Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Upcoming Appointments */}
+          {/* OPD Queue */}
           <Card className="lg:col-span-2">
             <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle className="flex items-center gap-2">
-                <Clock className="w-5 h-5 text-primary" />
-                Today's Schedule
+                <UserCheck className="w-5 h-5 text-primary" />
+                OPD Queue
               </CardTitle>
-              <Button variant="ghost" size="sm">View All</Button>
             </CardHeader>
-            <CardContent className="space-y-3">
+            <CardContent>
               {loading ? (
-                <div className="py-6 text-center text-sm text-muted-foreground">Loading appointments...</div>
-              ) : upcomingAppointments.length === 0 ? (
-                <div className="py-6 text-center text-sm text-muted-foreground">No appointments today</div>
+                <div className="py-8 text-center text-sm text-muted-foreground">Loading queue...</div>
+              ) : currentQueue.length === 0 ? (
+                <div className="py-8 text-center text-sm text-muted-foreground">No patients in queue</div>
               ) : (
-                upcomingAppointments.map((apt, i) => (
-                  <div
-                    key={i}
-                    className="flex items-center justify-between p-4 rounded-lg border bg-card hover:bg-muted/50 transition-colors"
-                  >
-                    <div className="flex items-center gap-4">
-                      <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-                        <span className="text-sm font-medium text-primary">
-                          {apt.patient.split(" ").map((n: string) => n[0]).join("")}
-                        </span>
-                      </div>
-                      <div>
-                        <p className="font-medium">{apt.patient}</p>
-                        <p className="text-sm text-muted-foreground">{apt.type}</p>
-                      </div>
+                <div className="space-y-4">
+                  {/* Call Next Button */}
+                  {waitingPatients.length > 0 && (
+                    <Button 
+                      onClick={handleCallNext} 
+                      className="w-full btn-gradient mb-4"
+                      size="lg"
+                    >
+                      <UserCheck className="w-4 h-4 mr-2" />
+                      Call Next Patient ({waitingPatients.length} waiting)
+                    </Button>
+                  )}
+
+                  {/* Now Serving - Current Patient */}
+                  {servingPatients.length > 0 && (
+                    <div className="space-y-2">
+                      <h4 className="font-semibold text-purple-700 text-sm">Now Serving</h4>
+                      {servingPatients.map((p: any) => (
+                        <div key={p.id} className="flex items-center justify-between p-4 rounded-lg border-2 border-purple-200 bg-purple-50">
+                          <div className="flex items-center gap-3 flex-1">
+                            <div className="w-10 h-10 rounded-full bg-purple-500 flex items-center justify-center font-bold text-white">🔔</div>
+                            <div className="flex-1">
+                              <div className="font-semibold">{p.patient_name}</div>
+                              <div className="text-xs text-muted-foreground flex items-center gap-2">
+                                <Clock className="w-3 h-3" />
+                                Queue #{p.queue_number}
+                              </div>
+                            </div>
+                          </div>
+                          <Button 
+                            size="sm" 
+                            className="btn-gradient"
+                            onClick={() => handleCompleteService(p.id)}
+                          >
+                            <CheckCircle className="w-4 h-4 mr-1" />
+                            Done
+                          </Button>
+                        </div>
+                      ))}
                     </div>
-                    <div className="flex items-center gap-3">
-                      <span className="text-sm font-medium">{apt.time}</span>
-                      <Badge variant={apt.status === "confirmed" ? "default" : "secondary"}>
-                        {apt.status}
-                      </Badge>
+                  )}
+
+                  {/* Waiting Patients Queue */}
+                  {waitingPatients.length > 0 && (
+                    <div className="space-y-2">
+                      <h4 className="font-semibold text-yellow-700 text-sm">Waiting ({waitingPatients.length})</h4>
+                      {waitingPatients.slice(0, 5).map((p: any, idx: number) => (
+                        <div key={p.id} className={`flex items-center justify-between p-3 rounded-lg border-2 ${idx === 0 ? "border-primary bg-primary/5" : "border-yellow-200 bg-yellow-50"}`}>
+                          <div className="flex items-center gap-3 flex-1">
+                            <div className="w-8 h-8 rounded-full bg-yellow-100 flex items-center justify-center font-bold text-yellow-700 text-sm">{idx + 1}</div>
+                            <div className="flex-1">
+                              <div className="font-semibold text-sm">{p.patient_name}</div>
+                              <div className="text-xs text-muted-foreground">Queue #{p.queue_number}</div>
+                            </div>
+                          </div>
+                          {p.priority && <Badge variant="outline" className="text-xs">P{p.priority}</Badge>}
+                        </div>
+                      ))}
+                      {waitingPatients.length > 5 && (
+                        <div className="text-xs text-muted-foreground text-center p-2">
+                          +{waitingPatients.length - 5} more waiting
+                        </div>
+                      )}
                     </div>
-                  </div>
-                ))
+                  )}
+
+                  {/* Completed Patients */}
+                  {completedPatients.length > 0 && (
+                    <div className="space-y-2">
+                      <h4 className="font-semibold text-green-700 text-sm">Completed Today ({completedPatients.length})</h4>
+                      {completedPatients.slice(0, 2).map((p: any) => (
+                        <div key={p.id} className="flex items-center justify-between p-3 rounded-lg border-2 border-green-200 bg-green-50">
+                          <div className="flex items-center gap-3 flex-1">
+                            <div className="w-8 h-8 rounded-full bg-green-500 flex items-center justify-center text-white text-sm">✓</div>
+                            <div className="flex-1">
+                              <div className="font-semibold text-sm">{p.patient_name}</div>
+                              <div className="text-xs text-muted-foreground">Queue #{p.queue_number}</div>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
               )}
             </CardContent>
           </Card>
