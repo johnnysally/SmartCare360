@@ -184,6 +184,44 @@ async function init() {
       email TEXT PRIMARY KEY,
       subscribedAt TEXT
     )`,
+    `CREATE TABLE IF NOT EXISTS medication_orders (
+      id TEXT PRIMARY KEY,
+      patient_id TEXT,
+      patient_name TEXT,
+      ward_id TEXT,
+      drug_name TEXT,
+      dose TEXT,
+      route TEXT,
+      frequency TEXT,
+      start_time TEXT,
+      end_time TEXT,
+      special_instructions TEXT,
+      status TEXT,
+      doctor_id TEXT,
+      doctor_name TEXT,
+      pharmacy_id TEXT,
+      pharmacy_notes TEXT,
+      administered_at TEXT,
+      administered_by TEXT,
+      administered_by_nurse TEXT,
+      administration_notes TEXT,
+      created_at TEXT,
+      updated_at TEXT,
+      due_time TEXT,
+      created_by TEXT
+    )`,
+    `CREATE TABLE IF NOT EXISTS medication_administration_logs (
+      id TEXT PRIMARY KEY,
+      medication_order_id TEXT,
+      patient_id TEXT,
+      nurse_id TEXT,
+      nurse_name TEXT,
+      time_given TEXT,
+      status TEXT,
+      notes TEXT,
+      verified_by TEXT,
+      created_at TEXT
+    )`,
   ];
 
   for (const q of createQueries) {
@@ -231,7 +269,13 @@ async function init() {
     `CREATE INDEX IF NOT EXISTS idx_queues_patient_id ON queues (patient_id)`,
     `CREATE INDEX IF NOT EXISTS idx_notifications_patient_id ON notifications (patient_id)`,
     `CREATE INDEX IF NOT EXISTS idx_notifications_status ON notifications (status)`,
-    `CREATE INDEX IF NOT EXISTS idx_queue_analytics_department ON queue_analytics (department)`
+    `CREATE INDEX IF NOT EXISTS idx_queue_analytics_department ON queue_analytics (department)`,
+    `CREATE INDEX IF NOT EXISTS idx_medication_orders_patient_id ON medication_orders (patient_id)`,
+    `CREATE INDEX IF NOT EXISTS idx_medication_orders_status ON medication_orders (status)`,
+    `CREATE INDEX IF NOT EXISTS idx_medication_orders_ward_id ON medication_orders (ward_id)`,
+    `CREATE INDEX IF NOT EXISTS idx_medication_orders_due_time ON medication_orders (due_time)`,
+    `CREATE INDEX IF NOT EXISTS idx_medication_logs_medication_id ON medication_administration_logs (medication_order_id)`,
+    `CREATE INDEX IF NOT EXISTS idx_medication_logs_nurse_id ON medication_administration_logs (nurse_id)`
   ];
 
   for (const iq of indexQueries) {

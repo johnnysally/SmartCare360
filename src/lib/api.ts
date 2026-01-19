@@ -233,6 +233,41 @@ export async function deleteUser(id) {
   return apiFetch(`/users/${id}`, { method: 'DELETE' });
 }
 
+// Medication functions
+export async function getMedications(status?: string, patientId?: string, wardId?: string) {
+  let path = '/medications';
+  const params = new URLSearchParams();
+  if (status) params.append('status', status);
+  if (patientId) params.append('patientId', patientId);
+  if (wardId) params.append('wardId', wardId);
+  if (params.toString()) path += '?' + params.toString();
+  return apiFetch(path);
+}
+
+export async function getMedicationById(id: string) {
+  return apiFetch(`/medications/${id}`);
+}
+
+export async function prescribeMedication(payload) {
+  return apiFetch('/medications', { method: 'POST', body: JSON.stringify(payload) });
+}
+
+export async function updateMedicationStatus(medicationId: string, payload) {
+  return apiFetch(`/medications/${medicationId}`, { method: 'PUT', body: JSON.stringify(payload) });
+}
+
+export async function deleteMedication(medicationId: string) {
+  return apiFetch(`/medications/${medicationId}`, { method: 'DELETE' });
+}
+
+export async function getMedicationHistory(patientId: string) {
+  return apiFetch(`/medications/patient/${patientId}`);
+}
+
+export async function getMedicationAuditLog() {
+  return apiFetch('/medications/admin/audit-log');
+}
+
 export default {
   postNewsletter,
   login,
@@ -282,4 +317,11 @@ export default {
   getQueueStatsByDepartment,
   getQueueAnalytics,
   getPatientNotifications,
+  getMedications,
+  getMedicationById,
+  prescribeMedication,
+  updateMedicationStatus,
+  deleteMedication,
+  getMedicationHistory,
+  getMedicationAuditLog,
 };

@@ -24,6 +24,7 @@ import Prescriptions from "./pages/doctor/Prescriptions";
 import LabResults from "./pages/doctor/LabResults";
 import Schedule from "./pages/doctor/Schedule";
 import MedicalNotes from "./pages/doctor/MedicalNotes";
+import DoctorMedications from "./pages/doctor/Medications";
 
 // Admin Pages
 import AdminDashboard from "./pages/admin/AdminDashboard";
@@ -45,6 +46,7 @@ import LabReports from "./pages/lab/LabReports";
 import NurseDashboard from "./pages/nurse/NurseDashboard";
 import VitalsCapture from "./pages/nurse/VitalsCapture";
 import Medications from "./pages/nurse/Medications";
+import MedicationAdministration from "./pages/nurse/MedicationAdministration";
 import CareNotes from "./pages/nurse/CareNotes";
 import TaskList from "./pages/nurse/TaskList";
 
@@ -56,6 +58,7 @@ import MyPrescriptions from "./pages/patient/MyPrescriptions";
 import MyBills from "./pages/patient/MyBills";
 import PatientTelemedicine from "./pages/patient/PatientTelemedicine";
 import PatientProfile from "./pages/patient/PatientProfile";
+import MedicationHistory from "./pages/patient/MedicationHistory";
 
 // Management Pages
 import ManagementDashboard from "./pages/management/ManagementDashboard";
@@ -87,6 +90,9 @@ import AIDashboard from "./pages/ai/AIDashboard";
 import AIAlerts from "./pages/ai/AIAlerts";
 import AITrends from "./pages/ai/AITrends";
 import AIRiskScores from "./pages/ai/AIRiskScores";
+
+// Pharmacy Pages
+import PharmacyMedications from "./pages/pharmacy/Medications";
 import AIInsights from "./pages/ai/AIInsights";
 
 // Referral Pages
@@ -131,6 +137,7 @@ const App = () => (
           <Route path="/doctor/lab-results" element={<ProtectedRoute><LabResults /></ProtectedRoute>} />
           <Route path="/doctor/schedule" element={<ProtectedRoute><Schedule /></ProtectedRoute>} />
           <Route path="/doctor/medical-notes" element={<ProtectedRoute><MedicalNotes /></ProtectedRoute>} />
+          <Route path="/doctor/medications" element={<ProtectedRoute><DoctorMedications /></ProtectedRoute>} />
           
           {/* Admin Routes */}
           <Route path="/admin/dashboard" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
@@ -153,6 +160,7 @@ const App = () => (
           <Route path="/nurse/dashboard" element={<ProtectedRoute><NurseDashboard /></ProtectedRoute>} />
           <Route path="/nurse/vitals" element={<ProtectedRoute><VitalsCapture /></ProtectedRoute>} />
           <Route path="/nurse/medications" element={<ProtectedRoute><Medications /></ProtectedRoute>} />
+          <Route path="/nurse/administer-meds" element={<ProtectedRoute><MedicationAdministration /></ProtectedRoute>} />
           <Route path="/nurse/notes" element={<ProtectedRoute><CareNotes /></ProtectedRoute>} />
           <Route path="/nurse/tasks" element={<ProtectedRoute><TaskList /></ProtectedRoute>} />
           
@@ -164,6 +172,7 @@ const App = () => (
           <Route path="/patient/bills" element={<ProtectedRoute><MyBills /></ProtectedRoute>} />
           <Route path="/patient/telemedicine" element={<ProtectedRoute><PatientTelemedicine /></ProtectedRoute>} />
           <Route path="/patient/profile" element={<ProtectedRoute><PatientProfile /></ProtectedRoute>} />
+          <Route path="/patient/medications/:patientId" element={<ProtectedRoute><MedicationHistory /></ProtectedRoute>} />
           
           {/* Management Routes */}
           <Route path="/management/dashboard" element={<ProtectedRoute><ManagementDashboard /></ProtectedRoute>} />
@@ -203,6 +212,7 @@ const App = () => (
           
           {/* Pharmacy Routes */}
           <Route path="/pharmacy/dashboard" element={<ProtectedRoute><PharmacyDashboard /></ProtectedRoute>} />
+          <Route path="/pharmacy/medications" element={<ProtectedRoute><PharmacyMedications /></ProtectedRoute>} />
           <Route path="/pharmacy/orders" element={<ProtectedRoute><Orders /></ProtectedRoute>} />
           <Route path="/pharmacy/inventory" element={<ProtectedRoute><Inventory /></ProtectedRoute>} />
           <Route path="/pharmacy/drug-reports" element={<ProtectedRoute><DrugReports /></ProtectedRoute>} />

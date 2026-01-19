@@ -27,6 +27,7 @@ app.use(bodyParser.json());
     const referralsRoutes = require('./routes/referrals');
     const newsletterRoutes = require('./routes/newsletter');
     const usersRoutes = require('./routes/users');
+    const medicationsRoutes = require('./routes/medications');
 
     // Simple token middleware
     function requireAuth(req, res, next) {
@@ -60,6 +61,7 @@ app.use(bodyParser.json());
     app.use('/queues', requireAuth, queuesRoutes);
     app.use('/billing', requireAuth, billingRoutes);
     app.use('/pharmacy', requireAuth, pharmacyRoutes);
+    app.use('/medications', requireAuth, medicationsRoutes);
     app.use('/telemedicine', requireAuth, telemedicineRoutes);
     app.use('/referrals', requireAuth, referralsRoutes);
     app.use('/users', requireAuth, usersRoutes);

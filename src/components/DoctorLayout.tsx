@@ -15,6 +15,7 @@ import {
   Menu,
   X,
   User,
+  Pill,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -24,6 +25,7 @@ const menuItems = [
   { icon: LayoutDashboard, label: "Dashboard", path: "/doctor/dashboard" },
   { icon: Stethoscope, label: "Consultations", path: "/doctor/consultations" },
   { icon: FileText, label: "Prescriptions", path: "/doctor/prescriptions" },
+  { icon: Pill, label: "Medications", path: "/doctor/medications" },
   { icon: FlaskConical, label: "Lab Results", path: "/doctor/lab-results" },
   { icon: CalendarDays, label: "Schedule", path: "/doctor/schedule" },
   { icon: ClipboardList, label: "Medical Notes", path: "/doctor/medical-notes" },

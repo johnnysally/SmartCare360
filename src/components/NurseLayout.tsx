@@ -23,6 +23,7 @@ const menuItems = [
   { icon: LayoutDashboard, label: "Dashboard", path: "/nurse/dashboard" },
   { icon: Activity, label: "Vitals Capture", path: "/nurse/vitals" },
   { icon: Pill, label: "Medications", path: "/nurse/medications" },
+  { icon: Stethoscope, label: "Administer Meds", path: "/nurse/administer-meds" },
   { icon: ClipboardList, label: "Care Notes", path: "/nurse/notes" },
   { icon: ListTodo, label: "Task List", path: "/nurse/tasks" },
 ];
