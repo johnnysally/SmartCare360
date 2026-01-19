@@ -60,6 +60,42 @@ export async function createAppointment(payload) {
   return apiFetch('/appointments', { method: 'POST', body: JSON.stringify(payload) });
 }
 
+export async function getPatientAppointments(patientId) {
+  return apiFetch(`/appointments/patient/${patientId}`);
+}
+
+export async function getDoctorAppointments(doctorId) {
+  return apiFetch(`/appointments/doctor/${doctorId}`);
+}
+
+export async function getDoctorAvailability(doctorId, date) {
+  return apiFetch(`/appointments/doctor/${doctorId}/availability?date=${date}`);
+}
+
+export async function updateAppointment(appointmentId, payload) {
+  return apiFetch(`/appointments/${appointmentId}`, { method: 'PUT', body: JSON.stringify(payload) });
+}
+
+export async function rescheduleAppointment(appointmentId, newTime) {
+  return apiFetch(`/appointments/${appointmentId}/reschedule`, { method: 'PUT', body: JSON.stringify({ newTime }) });
+}
+
+export async function cancelAppointment(appointmentId) {
+  return apiFetch(`/appointments/${appointmentId}/cancel`, { method: 'PUT' });
+}
+
+export async function confirmAppointment(appointmentId) {
+  return apiFetch(`/appointments/${appointmentId}/confirm`, { method: 'PUT' });
+}
+
+export async function deleteAppointment(appointmentId) {
+  return apiFetch(`/appointments/${appointmentId}`, { method: 'DELETE' });
+}
+
+export async function getAppointmentStats() {
+  return apiFetch('/appointments/stats/summary');
+}
+
 export async function getQueue() {
   return apiFetch('/queue');
 }
@@ -215,6 +251,15 @@ export default {
   createPatient,
   getAppointments,
   createAppointment,
+  getPatientAppointments,
+  getDoctorAppointments,
+  getDoctorAvailability,
+  updateAppointment,
+  rescheduleAppointment,
+  cancelAppointment,
+  confirmAppointment,
+  deleteAppointment,
+  getAppointmentStats,
   getQueue,
   getQueueStats,
   callNextPatient,
@@ -237,4 +282,12 @@ export default {
   updateUser,
   changeUserPassword,
   deleteUser,
+  checkInPatient,
+  getDepartmentQueue,
+  getAllQueues,
+  completeService,
+  setPriorityLevel,
+  getQueueStatsByDepartment,
+  getQueueAnalytics,
+  getPatientNotifications,
 };
