@@ -25,8 +25,40 @@ const Login = () => {
     setIsLoading(true);
     try {
       await signIn(email, password);
+      
+      // Get user role from localStorage to determine dashboard
+      const token = localStorage.getItem('sc360_token');
+      let userRole = '';
+      if (token) {
+        try {
+          const parts = token.split('.');
+          if (parts.length === 3) {
+            const payload = JSON.parse(atob(parts[1].replace(/-/g, '+').replace(/_/g, '/')));
+            userRole = payload?.role || '';
+          }
+        } catch (e) {
+          console.error('Failed to decode token');
+        }
+      }
+      
       toast({ title: 'Welcome back!', description: 'You have successfully logged in.' });
-      navigate(from, { replace: true });
+      
+      // Route to role-specific dashboard
+      const dashboardRoutes: { [key: string]: string } = {
+        'doctor': '/doctor/dashboard',
+        'nurse': '/nurse/dashboard',
+        'admin': '/admin/dashboard',
+        'pharmacy': '/pharmacy/dashboard',
+        'lab': '/lab/dashboard',
+        'patient': '/patient/dashboard',
+        'management': '/management/dashboard',
+        'it': '/it/dashboard',
+        'chw': '/chw/dashboard',
+        'referral': '/referral/dashboard',
+      };
+      
+      const dashboardPath = dashboardRoutes[userRole] || from || '/dashboard';
+      navigate(dashboardPath, { replace: true });
     } catch (err: any) {
       toast({ title: 'Login failed', description: err?.message || 'Invalid credentials' });
     } finally {

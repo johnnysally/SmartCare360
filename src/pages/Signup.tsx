@@ -18,6 +18,19 @@ const facilityTypes = [
   "Other",
 ];
 
+const roles = [
+  { value: "doctor", label: "Doctor" },
+  { value: "nurse", label: "Nurse" },
+  { value: "admin", label: "Admin" },
+  { value: "pharmacy", label: "Pharmacy Staff" },
+  { value: "lab", label: "Lab Technician" },
+  { value: "patient", label: "Patient" },
+  { value: "management", label: "Management" },
+  { value: "it", label: "IT Staff" },
+  { value: "chw", label: "CHW" },
+  { value: "referral", label: "Referral Coordinator" },
+];
+
 const API_URL = "https://smartcare360-jyho.onrender.com"; // replace with your backend
 
 const Signup = () => {
@@ -30,6 +43,7 @@ const Signup = () => {
     phone: "",
     facilityName: "",
     facilityType: "",
+    role: "",
     password: "",
     confirmPassword: "",
   });
@@ -42,6 +56,15 @@ const Signup = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!formData.role) {
+      toast({
+        title: "Role required",
+        description: "Please select your role.",
+        variant: "destructive",
+      });
+      return;
+    }
 
     if (formData.password !== formData.confirmPassword) {
       toast({
@@ -65,6 +88,7 @@ const Signup = () => {
           phone: formData.phone,
           facilityName: formData.facilityName,
           facilityType: formData.facilityType,
+          role: formData.role,
           password: formData.password,
         }),
       });
@@ -75,12 +99,32 @@ const Signup = () => {
         throw new Error(data.message || "Signup failed");
       }
 
+      // Store token if provided
+      if (data.token) {
+        localStorage.setItem('sc360_token', data.token);
+      }
+
       toast({
         title: "Account created!",
         description: "Welcome to SmartCare360. Let's set up your clinic.",
       });
 
-      navigate("/dashboard");
+      // Route to role-specific dashboard
+      const dashboardRoutes: { [key: string]: string } = {
+        'doctor': '/doctor/dashboard',
+        'nurse': '/nurse/dashboard',
+        'admin': '/admin/dashboard',
+        'pharmacy': '/pharmacy/dashboard',
+        'lab': '/lab/dashboard',
+        'patient': '/patient/dashboard',
+        'management': '/management/dashboard',
+        'it': '/it/dashboard',
+        'chw': '/chw/dashboard',
+        'referral': '/referral/dashboard',
+      };
+
+      const dashboardPath = dashboardRoutes[formData.role] || '/dashboard';
+      navigate(dashboardPath);
     } catch (err: any) {
       toast({
         title: "Signup failed",
@@ -223,6 +267,26 @@ const Signup = () => {
                       </SelectContent>
                     </Select>
                   </div>
+                </div>
+
+                {/* Role Selection */}
+                <div className="space-y-2">
+                  <Label>Your Role</Label>
+                  <Select
+                    value={formData.role}
+                    onValueChange={(value) => handleChange("role", value)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select your role" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {roles.map((role) => (
+                        <SelectItem key={role.value} value={role.value}>
+                          {role.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
 
                 {/* Password & Confirm */}
