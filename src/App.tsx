@@ -93,6 +93,7 @@ import AIRiskScores from "./pages/ai/AIRiskScores";
 
 // Pharmacy Pages
 import PharmacyMedications from "./pages/pharmacy/Medications";
+import PharmacyPrescriptions from "./pages/pharmacy/Prescriptions";
 import AIInsights from "./pages/ai/AIInsights";
 
 // Referral Pages
@@ -212,6 +213,7 @@ const App = () => (
           
           {/* Pharmacy Routes */}
           <Route path="/pharmacy/dashboard" element={<ProtectedRoute><PharmacyDashboard /></ProtectedRoute>} />
+          <Route path="/pharmacy/prescriptions" element={<ProtectedRoute><PharmacyPrescriptions /></ProtectedRoute>} />
           <Route path="/pharmacy/medications" element={<ProtectedRoute><PharmacyMedications /></ProtectedRoute>} />
           <Route path="/pharmacy/orders" element={<ProtectedRoute><Orders /></ProtectedRoute>} />
           <Route path="/pharmacy/inventory" element={<ProtectedRoute><Inventory /></ProtectedRoute>} />
