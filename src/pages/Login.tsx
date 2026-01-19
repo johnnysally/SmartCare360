@@ -55,6 +55,7 @@ const Login = () => {
         'it': '/it/dashboard',
         'chw': '/chw/dashboard',
         'referral': '/referral/dashboard',
+        'front-office': '/dashboard',
       };
       
       const dashboardPath = dashboardRoutes[userRole] || from || '/dashboard';

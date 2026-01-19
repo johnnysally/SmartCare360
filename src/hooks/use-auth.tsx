@@ -1,7 +1,14 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { login as apiLogin } from '@/lib/api';
 
-type User = { id?: string; email?: string; name?: string; role?: string } | null;
+type User = { 
+  id?: string; 
+  email?: string; 
+  name?: string;
+  firstName?: string;
+  lastName?: string;
+  role?: string 
+} | null;
 
 type AuthContextValue = {
   user: User;
@@ -29,7 +36,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const t = typeof localStorage !== 'undefined' ? localStorage.getItem('sc360_token') : null;
     if (t) {
       const payload = decodeToken(t);
-      return payload ? { id: payload.id, email: payload.email, role: payload.role } : null;
+      if (payload) {
+        return { 
+          id: payload.id, 
+          email: payload.email, 
+          name: payload.name || `${payload.firstName || ''} ${payload.lastName || ''}`.trim(),
+          firstName: payload.firstName,
+          lastName: payload.lastName,
+          role: payload.role 
+        };
+      }
     }
     return null;
   });
@@ -43,7 +59,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const res = await apiLogin(email, password);
     if (res?.token) {
       setToken(res.token);
-      setUser(res.user || decodeToken(res.token));
+      const payload = decodeToken(res.token);
+      if (payload) {
+        setUser({
+          id: payload.id,
+          email: payload.email,
+          name: payload.name || `${payload.firstName || ''} ${payload.lastName || ''}`.trim(),
+          firstName: payload.firstName,
+          lastName: payload.lastName,
+          role: payload.role,
+        });
+      } else {
+        setUser(res.user);
+      }
     } else {
       throw new Error('Login failed');
     }

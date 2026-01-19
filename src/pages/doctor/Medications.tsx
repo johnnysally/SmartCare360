@@ -8,6 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Pill, Plus, Clock, CheckCircle2, AlertCircle, Search, Eye, Trash2, X, Save, History } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/use-auth";
 import { getMedications, prescribeMedication, updateMedicationStatus, deleteMedication, getAppointments } from "@/lib/api";
 
 interface Medication {
@@ -61,6 +62,7 @@ const DoctorMedications = () => {
   const [loading, setLoading] = useState(false);
   const [showCompleted, setShowCompleted] = useState(false);
   const { toast } = useToast();
+  const { user } = useAuth();
 
   const routes = ["Oral", "IV", "IM", "SC", "Topical", "Rectal", "Inhalation"];
   const frequencies = ["Once daily", "Twice daily", "Three times daily", "Four times daily", "Every 4 hours", "Every 6 hours", "Every 8 hours", "Every 12 hours", "As needed"];
@@ -175,8 +177,8 @@ const DoctorMedications = () => {
         startTime: form.startTime,
         endTime: form.endTime,
         specialInstructions: form.specialInstructions.trim(),
-        doctorId: localStorage.getItem("sc360_userId") || "current-doctor",
-        doctorName: localStorage.getItem("sc360_userName") || "Dr. Current User",
+        doctorId: user?.id || "current-doctor",
+        doctorName: user?.name || user?.firstName || "Dr. Current User",
       };
 
       console.log("Submitting medication prescription:", payload);

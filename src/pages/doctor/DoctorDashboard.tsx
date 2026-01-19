@@ -17,6 +17,7 @@ import {
 import { useEffect, useState } from "react";
 import { getAppointments, getPatients, getAllQueues, callNextPatient, completeService } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/use-auth";
 
 const DoctorDashboard = () => {
   const [appointments, setAppointments] = useState<any[]>([]);
@@ -24,7 +25,7 @@ const DoctorDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [allQueues, setAllQueues] = useState<any>({});
   const { toast } = useToast();
-  const currentUser = JSON.parse(localStorage.getItem('sc360_user') || '{}');
+  const { user } = useAuth();
 
   useEffect(() => {
     fetchDashboardData();
@@ -119,7 +120,7 @@ const DoctorDashboard = () => {
         {/* Welcome Section */}
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div>
-            <h2 className="text-2xl font-display font-bold">Good Morning, {currentUser.name || 'Doctor'}</h2>
+            <h2 className="text-2xl font-display font-bold">Good Morning, {user?.name || user?.firstName || 'Doctor'}</h2>
             <p className="text-muted-foreground">You have {todayAppointments.length} appointments scheduled for today</p>
           </div>
           <Button className="btn-gradient">

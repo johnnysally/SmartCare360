@@ -24,10 +24,12 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/use-auth";
 import { prescribeMedication } from "@/lib/api";
 
 const Prescriptions = () => {
   const { toast } = useToast();
+  const { user } = useAuth();
   const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedPatient, setSelectedPatient] = useState("");
@@ -127,8 +129,8 @@ const Prescriptions = () => {
           startTime: new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }),
           endTime: "",
           specialInstructions: instructions || "Follow diagnosis: " + diagnosis,
-          doctorId: localStorage.getItem("sc360_userId") || "current-doctor",
-          doctorName: localStorage.getItem("sc360_userName") || "Dr. Current User",
+          doctorId: user?.id || "current-doctor",
+          doctorName: user?.name || user?.firstName || "Dr. Current User",
         };
 
         console.log("[DEBUG] Prescription payload:", payload);

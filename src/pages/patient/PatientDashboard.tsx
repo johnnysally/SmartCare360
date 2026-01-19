@@ -15,13 +15,14 @@ import {
 import { useEffect, useState } from "react";
 import { getAppointments, getBilling } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/use-auth";
 
 const PatientDashboard = () => {
   const [appointments, setAppointments] = useState<any[]>([]);
   const [billing, setBilling] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
-  const currentUser = JSON.parse(localStorage.getItem('sc360_user') || '{}');
+  const { user } = useAuth();
 
   useEffect(() => {
     fetchDashboardData();
@@ -84,7 +85,7 @@ const PatientDashboard = () => {
           <CardContent className="p-6">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
               <div>
-                <h2 className="text-2xl font-bold font-display">Welcome back, {currentUser.name || 'Patient'}!</h2>
+                <h2 className="text-2xl font-bold font-display">Welcome back, {user?.name || user?.firstName || 'Patient'}!</h2>
                 <p className="text-muted-foreground mt-1">Here's an overview of your health information.</p>
               </div>
               <div className="flex gap-3">
