@@ -190,6 +190,28 @@ async function init() {
     await client.query(q);
   }
 
+  // Add missing columns to appointments table if they don't exist
+  const alterQueries = [
+    `ALTER TABLE appointments ADD COLUMN IF NOT EXISTS department TEXT`,
+    `ALTER TABLE appointments ADD COLUMN IF NOT EXISTS priority INTEGER DEFAULT 3`,
+    `ALTER TABLE appointments ADD COLUMN IF NOT EXISTS queue_number TEXT`,
+    `ALTER TABLE appointments ADD COLUMN IF NOT EXISTS arrival_time TEXT`,
+    `ALTER TABLE appointments ADD COLUMN IF NOT EXISTS service_start_time TEXT`,
+    `ALTER TABLE appointments ADD COLUMN IF NOT EXISTS service_end_time TEXT`,
+    `ALTER TABLE appointments ADD COLUMN IF NOT EXISTS next_department TEXT`,
+    `ALTER TABLE appointments ADD COLUMN IF NOT EXISTS called_at TEXT`,
+    `ALTER TABLE appointments ADD COLUMN IF NOT EXISTS completed_at TEXT`,
+    `ALTER TABLE appointments ADD COLUMN IF NOT EXISTS skip_reason TEXT`,
+  ];
+
+  for (const aq of alterQueries) {
+    try {
+      await client.query(aq);
+    } catch (err) {
+      console.log('Column may already exist:', { msg: err && err.message });
+    }
+  }
+
   // Ensure common indexes for performance
   const indexQueries = [
     `CREATE INDEX IF NOT EXISTS idx_appointments_patientId ON appointments (patientId)`,
