@@ -111,35 +111,46 @@ router.put('/:id', (req, res) => {
   const db = dbModule.db;
   if (!db) return res.status(500).json({ message: 'DB not initialized' });
 
-  let sql = 'UPDATE medication_orders SET status = $1';
-  const params = [status, req.params.id];
-
+  const updates = [];
+  const params = [];
+  
+  // Always update status
+  if (status) {
+    updates.push(`status = $${params.length + 1}`);
+    params.push(status);
+  }
+  
   if (pharmacyNotes) {
-    sql += ', pharmacy_notes = $' + (params.length);
-    params.splice(1, 0, pharmacyNotes);
+    updates.push(`pharmacy_notes = $${params.length + 1}`);
+    params.push(pharmacyNotes);
   }
 
   if (administeredAt) {
-    sql += ', administered_at = $' + (params.length);
-    params.splice(1, 0, administeredAt);
+    updates.push(`administered_at = $${params.length + 1}`);
+    params.push(administeredAt);
   }
 
   if (administeredBy) {
-    sql += ', administered_by = $' + (params.length);
-    params.splice(1, 0, administeredBy);
+    updates.push(`administered_by = $${params.length + 1}`);
+    params.push(administeredBy);
   }
 
   if (administeredByNurse) {
-    sql += ', administered_by_nurse = $' + (params.length);
-    params.splice(1, 0, administeredByNurse);
+    updates.push(`administered_by_nurse = $${params.length + 1}`);
+    params.push(administeredByNurse);
   }
 
   if (notes) {
-    sql += ', administration_notes = $' + (params.length);
-    params.splice(1, 0, notes);
+    updates.push(`administration_notes = $${params.length + 1}`);
+    params.push(notes);
   }
 
-  sql += ' WHERE id = $' + params.length;
+  if (updates.length === 0) {
+    return res.status(400).json({ message: 'No fields to update' });
+  }
+
+  const sql = `UPDATE medication_orders SET ${updates.join(', ')} WHERE id = $${params.length + 1}`;
+  params.push(req.params.id);
 
   db.run(sql, params, (err) => {
     if (err) {

@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
-import { Pill, Plus, Clock, CheckCircle2, AlertCircle, Search, Edit2, Trash2, X, Save, History } from "lucide-react";
+import { Pill, Plus, Clock, CheckCircle2, AlertCircle, Search, Eye, Trash2, X, Save, History } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { getMedications, prescribeMedication, updateMedicationStatus, deleteMedication, getAppointments } from "@/lib/api";
@@ -55,6 +55,7 @@ const DoctorMedications = () => {
   });
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [selectedMedication, setSelectedMedication] = useState<Medication | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [filterStatus, setFilterStatus] = useState<"all" | "pending" | "ready" | "given" | "missed" | "completed">("all");
   const [loading, setLoading] = useState(false);
@@ -128,35 +129,93 @@ const DoctorMedications = () => {
   };
 
   const handleSubmit = async () => {
-    if (!form.patientId || !form.drugName || !form.dose || !form.startTime) {
-      toast({ title: "Error", description: "Please fill all required fields", variant: "destructive" });
+    // Validate required fields
+    if (!form.patientId) {
+      toast({ title: "Error", description: "Please select a patient", variant: "destructive" });
+      return;
+    }
+    if (!form.drugName.trim()) {
+      toast({ title: "Error", description: "Please enter drug name", variant: "destructive" });
+      return;
+    }
+    if (!form.dose.trim()) {
+      toast({ title: "Error", description: "Please enter dose", variant: "destructive" });
+      return;
+    }
+    if (!form.startTime) {
+      toast({ title: "Error", description: "Please select start time", variant: "destructive" });
+      return;
+    }
+    if (!form.route) {
+      toast({ title: "Error", description: "Please select route", variant: "destructive" });
+      return;
+    }
+    if (!form.frequency) {
+      toast({ title: "Error", description: "Please select frequency", variant: "destructive" });
       return;
     }
 
     try {
       setLoading(true);
       const selectedPatient = checkInPatients.find(p => p.id === form.patientId);
+      
+      if (!selectedPatient) {
+        toast({ title: "Error", description: "Selected patient not found", variant: "destructive" });
+        return;
+      }
+
       const payload = {
         patientId: form.patientId,
-        patientName: selectedPatient?.name || "Unknown",
-        wardId: form.wardId,
-        drugName: form.drugName,
-        dose: form.dose,
+        patientName: selectedPatient.name || "Unknown",
+        wardId: form.wardId || "General",
+        drugName: form.drugName.trim(),
+        dose: form.dose.trim(),
         route: form.route,
         frequency: form.frequency,
         startTime: form.startTime,
         endTime: form.endTime,
-        specialInstructions: form.specialInstructions,
-        doctorId: "current-doctor",
-        doctorName: "Dr. Current User",
+        specialInstructions: form.specialInstructions.trim(),
+        doctorId: localStorage.getItem("sc360_userId") || "current-doctor",
+        doctorName: localStorage.getItem("sc360_userName") || "Dr. Current User",
       };
 
-      await prescribeMedication(payload);
-      toast({ title: "Success", description: "Medication prescribed successfully" });
-      resetForm();
+      console.log("Submitting medication prescription:", payload);
+      
+      const result = await prescribeMedication(payload);
+      
+      if (result && result.id) {
+        toast({ 
+          title: "Success", 
+          description: `Medication prescribed for ${selectedPatient.name} successfully!` 
+        });
+        resetForm();
+        // Reload medications after a brief delay to ensure DB sync
+        setTimeout(() => {
+          loadMedications();
+        }, 500);
+      } else {
+        throw new Error("Failed to create medication");
+      }
+    } catch (err: any) {
+      console.error("Prescription error:", err);
+      toast({ 
+        title: "Error", 
+        description: err?.message || "Failed to prescribe medication. Please try again.", 
+        variant: "destructive" 
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSendToPharmacy = async (id: string) => {
+    try {
+      setLoading(true);
+      await updateMedicationStatus(id, { status: "ready" });
+      toast({ title: "Sent to Pharmacy", description: "Medication sent for approval" });
       loadMedications();
     } catch (err: any) {
-      toast({ title: "Error", description: err?.message || "Failed to prescribe medication", variant: "destructive" });
+      toast({ title: "Error", description: err?.message || "Failed to send medication", variant: "destructive" });
     } finally {
       setLoading(false);
     }
@@ -284,48 +343,58 @@ const DoctorMedications = () => {
             <CardContent className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label>Patient *</Label>
+                  <Label className="text-base">Patient <span className="text-red-500">*</span></Label>
                   <select
                     value={form.patientId}
                     onChange={(e) => setForm({ ...form, patientId: e.target.value })}
-                    className="flex h-10 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 w-full"
+                    className={`flex h-10 rounded-md border ${!form.patientId ? 'border-red-300' : 'border-input'} bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 w-full`}
                   >
                     <option value="">Select patient from check-ins...</option>
-                    {checkInPatients.map((p) => (
-                      <option key={p.id} value={p.id}>{p.name}</option>
-                    ))}
+                    {checkInPatients.length === 0 ? (
+                      <option disabled>No patients available</option>
+                    ) : (
+                      checkInPatients.map((p) => (
+                        <option key={p.id} value={p.id}>{p.name}</option>
+                      ))
+                    )}
                   </select>
                   <p className="text-xs text-muted-foreground">Only patients with appointments are shown</p>
+                  {checkInPatients.length === 0 && (
+                    <p className="text-xs text-orange-600">No check-in patients available. Please ensure patients have appointments.</p>
+                  )}
                 </div>
                 <div className="space-y-2">
-                  <Label>Ward/Bed</Label>
+                  <Label className="text-base">Ward/Bed</Label>
                   <Input
                     placeholder="e.g. A-104"
                     value={form.wardId}
                     onChange={(e) => setForm({ ...form, wardId: e.target.value })}
                   />
+                  <p className="text-xs text-muted-foreground">Optional - defaults to General</p>
                 </div>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="space-y-2">
-                  <Label>Drug Name *</Label>
+                  <Label className="text-base">Drug Name <span className="text-red-500">*</span></Label>
                   <Input
                     placeholder="e.g. Paracetamol"
                     value={form.drugName}
                     onChange={(e) => setForm({ ...form, drugName: e.target.value })}
+                    className={!form.drugName ? 'border-red-300' : ''}
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label>Dose *</Label>
+                  <Label className="text-base">Dose <span className="text-red-500">*</span></Label>
                   <Input
                     placeholder="e.g. 500mg"
                     value={form.dose}
                     onChange={(e) => setForm({ ...form, dose: e.target.value })}
+                    className={!form.dose ? 'border-red-300' : ''}
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label>Route</Label>
+                  <Label className="text-base">Route <span className="text-red-500">*</span></Label>
                   <select
                     value={form.route}
                     onChange={(e) => setForm({ ...form, route: e.target.value })}
@@ -340,7 +409,7 @@ const DoctorMedications = () => {
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="space-y-2">
-                  <Label>Frequency</Label>
+                  <Label className="text-base">Frequency <span className="text-red-500">*</span></Label>
                   <select
                     value={form.frequency}
                     onChange={(e) => setForm({ ...form, frequency: e.target.value })}
@@ -352,35 +421,42 @@ const DoctorMedications = () => {
                   </select>
                 </div>
                 <div className="space-y-2">
-                  <Label>Start Time *</Label>
+                  <Label className="text-base">Start Time <span className="text-red-500">*</span></Label>
                   <Input
                     type="time"
                     value={form.startTime}
                     onChange={(e) => setForm({ ...form, startTime: e.target.value })}
+                    className={!form.startTime ? 'border-red-300' : ''}
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label>End Time</Label>
+                  <Label className="text-base">End Time</Label>
                   <Input
                     type="time"
                     value={form.endTime}
                     onChange={(e) => setForm({ ...form, endTime: e.target.value })}
                   />
+                  <p className="text-xs text-muted-foreground">Optional</p>
                 </div>
               </div>
 
               <div className="space-y-2">
-                <Label>Special Instructions</Label>
+                <Label className="text-base">Special Instructions</Label>
                 <Textarea
-                  placeholder="e.g. Take with food, avoid dairy products..."
+                  placeholder="e.g. Take with food, avoid dairy products, report any side effects..."
                   rows={3}
                   value={form.specialInstructions}
                   onChange={(e) => setForm({ ...form, specialInstructions: e.target.value })}
                 />
+                <p className="text-xs text-muted-foreground">Optional - Add any special notes or warnings</p>
               </div>
 
               <div className="flex flex-col sm:flex-row gap-3">
-                <Button onClick={handleSubmit} className="flex-1 btn-gradient" disabled={loading}>
+                <Button 
+                  onClick={handleSubmit} 
+                  className="flex-1 btn-gradient" 
+                  disabled={loading || !form.patientId || !form.drugName || !form.dose || !form.startTime}
+                >
                   <Save className="w-4 h-4 mr-2" />
                   {loading ? "Saving..." : "Prescribe Medication"}
                 </Button>
@@ -440,6 +516,7 @@ const DoctorMedications = () => {
                   variant={filterStatus === status ? "default" : "outline"}
                   onClick={() => setFilterStatus(status)}
                   size="sm"
+                  className="text-xs sm:text-sm"
                 >
                   {status.charAt(0).toUpperCase() + status.slice(1)}
                 </Button>
@@ -450,6 +527,7 @@ const DoctorMedications = () => {
             <Button
               variant="default"
               size="sm"
+              className="text-xs sm:text-sm"
             >
               Completed ({stats.completed})
             </Button>
@@ -470,28 +548,90 @@ const DoctorMedications = () => {
                 No medications found. Create a prescription to get started!
               </div>
             ) : (
-              <div className="space-y-3 overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead className="border-b">
-                    <tr className="text-muted-foreground">
-                      <th className="text-left p-2">Patient</th>
-                      <th className="text-left p-2">Drug</th>
-                      <th className="text-left p-2">Dose</th>
-                      <th className="text-left p-2">Route</th>
-                      <th className="text-left p-2">Frequency</th>
-                      <th className="text-left p-2">Status</th>
-                      <th className="text-left p-2">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filteredMedications.map((med) => (
-                      <tr key={med.id} className="border-b hover:bg-muted/50">
-                        <td className="p-2 font-medium">{med.patient_name}</td>
-                        <td className="p-2">{med.drug_name}</td>
-                        <td className="p-2">{med.dose}</td>
-                        <td className="p-2">{med.route}</td>
-                        <td className="p-2 text-xs">{med.frequency}</td>
-                        <td className="p-2">
+              <div className="space-y-3">
+                {/* Desktop View */}
+                <div className="hidden md:block overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead className="border-b">
+                      <tr className="text-muted-foreground">
+                        <th className="text-left p-2">Patient</th>
+                        <th className="text-left p-2">Drug</th>
+                        <th className="text-left p-2">Dose</th>
+                        <th className="text-left p-2">Route</th>
+                        <th className="text-left p-2">Frequency</th>
+                        <th className="text-left p-2">Status</th>
+                        <th className="text-left p-2">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {filteredMedications.map((med) => (
+                        <tr key={med.id} className="border-b hover:bg-muted/50">
+                          <td className="p-2 font-medium">{med.patient_name}</td>
+                          <td className="p-2">{med.drug_name}</td>
+                          <td className="p-2">{med.dose}</td>
+                          <td className="p-2">{med.route}</td>
+                          <td className="p-2 text-xs">{med.frequency}</td>
+                          <td className="p-2">
+                            <Badge
+                              variant={
+                                med.status === "pending" ? "secondary" :
+                                med.status === "ready" ? "default" :
+                                med.status === "given" ? "outline" :
+                                med.status === "completed" ? "default" :
+                                "destructive"
+                              }
+                              className={med.status === "completed" ? "bg-purple-600 hover:bg-purple-700" : ""}
+                            >
+                              {med.status.charAt(0).toUpperCase() + med.status.slice(1)}
+                            </Badge>
+                          </td>
+                          <td className="p-2 flex gap-1 flex-wrap">
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => setSelectedMedication(med)}
+                              className="h-8 text-blue-600 hover:text-blue-700"
+                              title="View Details"
+                            >
+                              <Eye className="w-4 h-4" />
+                            </Button>
+                            {med.status === "pending" && (
+                              <Button
+                                size="sm"
+                                className="bg-green-600 hover:bg-green-700 text-white h-8"
+                                onClick={() => handleSendToPharmacy(med.id)}
+                                disabled={loading}
+                                title="Send to Pharmacy"
+                              >
+                                <span className="hidden sm:inline">Send</span>
+                              </Button>
+                            )}
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => handleDelete(med.id)}
+                              className="h-8 text-red-600 hover:text-red-700"
+                              title="Delete"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Mobile View */}
+                <div className="md:hidden space-y-3">
+                  {filteredMedications.map((med) => (
+                    <Card key={med.id} className="overflow-hidden">
+                      <CardContent className="p-4 space-y-3">
+                        <div className="flex justify-between items-start gap-2">
+                          <div>
+                            <div className="font-semibold text-base">{med.patient_name}</div>
+                            <div className="text-sm text-muted-foreground">{med.drug_name} - {med.dose}</div>
+                          </div>
                           <Badge
                             variant={
                               med.status === "pending" ? "secondary" :
@@ -504,25 +644,174 @@ const DoctorMedications = () => {
                           >
                             {med.status.charAt(0).toUpperCase() + med.status.slice(1)}
                           </Badge>
-                        </td>
-                        <td className="p-2 flex gap-2">
+                        </div>
+                        
+                        <div className="grid grid-cols-2 gap-2 text-sm">
+                          <div>
+                            <span className="text-muted-foreground">Route:</span>
+                            <div className="font-medium">{med.route}</div>
+                          </div>
+                          <div>
+                            <span className="text-muted-foreground">Frequency:</span>
+                            <div className="font-medium">{med.frequency}</div>
+                          </div>
+                          <div>
+                            <span className="text-muted-foreground">Start:</span>
+                            <div className="font-medium">{med.start_time}</div>
+                          </div>
+                          {med.end_time && (
+                            <div>
+                              <span className="text-muted-foreground">End:</span>
+                              <div className="font-medium">{med.end_time}</div>
+                            </div>
+                          )}
+                        </div>
+
+                        <div className="flex gap-2 flex-wrap pt-2 border-t">
                           <Button
                             size="sm"
-                            variant="ghost"
+                            variant="outline"
+                            onClick={() => setSelectedMedication(med)}
+                            className="flex-1"
+                          >
+                            <Eye className="w-4 h-4 mr-1" />
+                            View
+                          </Button>
+                          {med.status === "pending" && (
+                            <Button
+                              size="sm"
+                              className="flex-1 bg-green-600 hover:bg-green-700 text-white"
+                              onClick={() => handleSendToPharmacy(med.id)}
+                              disabled={loading}
+                            >
+                              Send
+                            </Button>
+                          )}
+                          <Button
+                            size="sm"
+                            variant="outline"
                             onClick={() => handleDelete(med.id)}
-                            className="h-8 text-red-600 hover:text-red-700"
+                            className="text-red-600 hover:text-red-700"
                           >
                             <Trash2 className="w-4 h-4" />
                           </Button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
               </div>
             )}
           </CardContent>
         </Card>
+
+        {/* Medication Detail Modal */}
+        {selectedMedication && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 overflow-y-auto">
+            <Card className="w-full max-w-md max-h-[90vh] overflow-y-auto my-auto">
+              <CardHeader className="flex flex-row items-center justify-between sticky top-0 bg-white z-10">
+                <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
+                  <Pill className="w-5 h-5 text-blue-600" />
+                  Details
+                </CardTitle>
+                <Button variant="ghost" size="sm" onClick={() => setSelectedMedication(null)}>
+                  <X className="w-4 h-4" />
+                </Button>
+              </CardHeader>
+              <CardContent className="space-y-4 pb-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <div className="text-xs sm:text-sm text-muted-foreground">Patient</div>
+                    <div className="font-semibold text-sm sm:text-base">{selectedMedication.patient_name}</div>
+                  </div>
+                  <div>
+                    <div className="text-xs sm:text-sm text-muted-foreground">Status</div>
+                    <Badge 
+                      variant={selectedMedication.status === "pending" ? "secondary" : "default"}
+                      className={selectedMedication.status === "completed" ? "bg-purple-600 hover:bg-purple-700" : ""}
+                    >
+                      {selectedMedication.status.charAt(0).toUpperCase() + selectedMedication.status.slice(1)}
+                    </Badge>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <div className="text-xs sm:text-sm text-muted-foreground">Drug Name</div>
+                    <div className="font-semibold text-sm sm:text-base">{selectedMedication.drug_name}</div>
+                  </div>
+                  <div>
+                    <div className="text-xs sm:text-sm text-muted-foreground">Dose</div>
+                    <div className="font-semibold text-sm sm:text-base">{selectedMedication.dose}</div>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <div className="text-xs sm:text-sm text-muted-foreground">Route</div>
+                    <div className="font-semibold text-sm sm:text-base">{selectedMedication.route}</div>
+                  </div>
+                  <div>
+                    <div className="text-xs sm:text-sm text-muted-foreground">Frequency</div>
+                    <div className="font-semibold text-sm sm:text-base">{selectedMedication.frequency}</div>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <div className="text-xs sm:text-sm text-muted-foreground">Start Time</div>
+                    <div className="font-semibold text-sm sm:text-base">{selectedMedication.start_time}</div>
+                  </div>
+                  <div>
+                    <div className="text-xs sm:text-sm text-muted-foreground">End Time</div>
+                    <div className="font-semibold text-sm sm:text-base">{selectedMedication.end_time || "N/A"}</div>
+                  </div>
+                </div>
+
+                <div>
+                  <div className="text-xs sm:text-sm text-muted-foreground">Ward/Bed</div>
+                  <div className="font-semibold text-sm sm:text-base">{selectedMedication.ward_id || "General"}</div>
+                </div>
+
+                <div>
+                  <div className="text-xs sm:text-sm text-muted-foreground">Doctor</div>
+                  <div className="font-semibold text-sm sm:text-base">{selectedMedication.doctor_name}</div>
+                </div>
+
+                {selectedMedication.special_instructions && (
+                  <div>
+                    <div className="text-xs sm:text-sm text-muted-foreground">Special Instructions</div>
+                    <div className="font-semibold text-xs sm:text-sm bg-blue-50 p-2 rounded">{selectedMedication.special_instructions}</div>
+                  </div>
+                )}
+
+                <div className="flex flex-col gap-2 pt-4 border-t">
+                  {selectedMedication.status === "pending" && (
+                    <Button
+                      className="w-full bg-green-600 hover:bg-green-700 text-white"
+                      onClick={() => {
+                        handleSendToPharmacy(selectedMedication.id);
+                        setSelectedMedication(null);
+                      }}
+                      disabled={loading}
+                      size="sm"
+                    >
+                      Send to Pharmacy
+                    </Button>
+                  )}
+                  <Button
+                    variant="outline"
+                    className="w-full"
+                    onClick={() => setSelectedMedication(null)}
+                    size="sm"
+                  >
+                    Close
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
       </div>
     </DoctorLayout>
   );
