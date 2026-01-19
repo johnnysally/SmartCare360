@@ -1,10 +1,14 @@
 const BASE = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
+console.log('[DEBUG] API BASE URL:', BASE);
+console.log('[DEBUG] VITE_API_URL env:', import.meta.env.VITE_API_URL);
+
 async function apiFetch(path, options = {}) {
   const headers = { 'Content-Type': 'application/json', ...(options.headers || {}) };
   const token = typeof localStorage !== 'undefined' ? localStorage.getItem('sc360_token') : null;
   if (token) headers['Authorization'] = `Bearer ${token}`;
 
+  console.log('[DEBUG] API Call:', `${BASE}${path}`, { method: options.method || 'GET' });
   const res = await fetch(`${BASE}${path}`, { ...options, headers });
   if (!res.ok) {
     const body = await res.json().catch(() => null);
