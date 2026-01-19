@@ -81,7 +81,54 @@ async function init() {
       status TEXT,
       called_at TEXT,
       completed_at TEXT,
-      skip_reason TEXT
+      skip_reason TEXT,
+      priority INTEGER DEFAULT 3,
+      department TEXT,
+      queue_number TEXT,
+      arrival_time TEXT,
+      service_start_time TEXT,
+      service_end_time TEXT,
+      next_department TEXT
+    )`,
+    `CREATE TABLE IF NOT EXISTS queues (
+      id TEXT PRIMARY KEY,
+      patient_id TEXT,
+      patient_name TEXT,
+      department TEXT,
+      priority INTEGER DEFAULT 3,
+      queue_number TEXT,
+      status TEXT,
+      arrival_time TEXT,
+      call_time TEXT,
+      service_start_time TEXT,
+      service_end_time TEXT,
+      waiting_time_seconds INTEGER DEFAULT 0,
+      service_time_seconds INTEGER DEFAULT 0,
+      created_at TEXT,
+      updated_at TEXT
+    )`,
+    `CREATE TABLE IF NOT EXISTS notifications (
+      id TEXT PRIMARY KEY,
+      patient_id TEXT,
+      patient_phone TEXT,
+      notification_type TEXT,
+      title TEXT,
+      message TEXT,
+      channel TEXT,
+      status TEXT,
+      created_at TEXT,
+      sent_at TEXT
+    )`,
+    `CREATE TABLE IF NOT EXISTS queue_analytics (
+      id TEXT PRIMARY KEY,
+      department TEXT,
+      date TEXT,
+      total_patients INTEGER DEFAULT 0,
+      avg_wait_time_seconds INTEGER DEFAULT 0,
+      max_wait_time_seconds INTEGER DEFAULT 0,
+      peak_hour TEXT,
+      congestion_level TEXT,
+      created_at TEXT
     )`,
     `CREATE TABLE IF NOT EXISTS consultations (
       id TEXT PRIMARY KEY,
@@ -146,13 +193,23 @@ async function init() {
   // Ensure common indexes for performance
   const indexQueries = [
     `CREATE INDEX IF NOT EXISTS idx_appointments_patientId ON appointments (patientId)`,
+    `CREATE INDEX IF NOT EXISTS idx_appointments_department ON appointments (department)`,
+    `CREATE INDEX IF NOT EXISTS idx_appointments_status ON appointments (status)`,
+    `CREATE INDEX IF NOT EXISTS idx_appointments_priority ON appointments (priority)`,
     `CREATE INDEX IF NOT EXISTS idx_consultations_patientId ON consultations (patientId)`,
     `CREATE INDEX IF NOT EXISTS idx_prescriptions_consultationId ON prescriptions (consultationId)`,
     `CREATE INDEX IF NOT EXISTS idx_lab_results_patientId ON lab_results (patientId)`,
     `CREATE INDEX IF NOT EXISTS idx_telemedicine_sessions_patientId ON telemedicine_sessions (patientId)`,
     `CREATE INDEX IF NOT EXISTS idx_pharmacy_orders_patientId ON pharmacy_orders (patientId)`,
     `CREATE INDEX IF NOT EXISTS idx_referrals_patientId ON referrals (patientId)`,
-    `CREATE INDEX IF NOT EXISTS idx_billing_patientId ON billing (patientId)`
+    `CREATE INDEX IF NOT EXISTS idx_billing_patientId ON billing (patientId)`,
+    `CREATE INDEX IF NOT EXISTS idx_queues_department ON queues (department)`,
+    `CREATE INDEX IF NOT EXISTS idx_queues_status ON queues (status)`,
+    `CREATE INDEX IF NOT EXISTS idx_queues_priority ON queues (priority)`,
+    `CREATE INDEX IF NOT EXISTS idx_queues_patient_id ON queues (patient_id)`,
+    `CREATE INDEX IF NOT EXISTS idx_notifications_patient_id ON notifications (patient_id)`,
+    `CREATE INDEX IF NOT EXISTS idx_notifications_status ON notifications (status)`,
+    `CREATE INDEX IF NOT EXISTS idx_queue_analytics_department ON queue_analytics (department)`
   ];
 
   for (const iq of indexQueries) {

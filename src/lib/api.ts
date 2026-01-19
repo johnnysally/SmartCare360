@@ -68,6 +68,63 @@ export async function getQueueStats() {
   return apiFetch('/queue/stats');
 }
 
+// New Queue Management System
+export async function checkInPatient(payload) {
+  return apiFetch('/queues/check-in', { method: 'POST', body: JSON.stringify(payload) });
+}
+
+export async function getDepartmentQueue(department) {
+  return apiFetch(`/queues/department/${department}`);
+}
+
+export async function getAllQueues() {
+  return apiFetch('/queues/all');
+}
+
+export async function callNextPatient(department, staffId) {
+  const queue = await getDepartmentQueue(department);
+  if (queue.length === 0) throw new Error('No patients in queue');
+  
+  const firstPatient = queue[0];
+  return apiFetch(`/queues/${firstPatient.id}/call`, { 
+    method: 'POST', 
+    body: JSON.stringify({ department, staffId }) 
+  });
+}
+
+export async function completeService(queueId, nextDepartment = null) {
+  return apiFetch(`/queues/${queueId}/complete`, { 
+    method: 'POST', 
+    body: JSON.stringify({ nextDepartment }) 
+  });
+}
+
+export async function setPriorityLevel(queueId, priority) {
+  return apiFetch(`/queues/${queueId}/priority`, { 
+    method: 'PUT', 
+    body: JSON.stringify({ priority }) 
+  });
+}
+
+export async function getQueueStatsByDepartment(department) {
+  return apiFetch(`/queues/stats/${department}`);
+}
+
+export async function getQueueAnalytics(department = null, days = 7) {
+  const params = new URLSearchParams();
+  if (department) params.append('department', department);
+  params.append('days', days.toString());
+  return apiFetch(`/queues/analytics?${params.toString()}`);
+}
+
+export async function getPatientNotifications(patientId) {
+  return apiFetch(`/queues/notifications/${patientId}`);
+}
+
+export async function callNextPatient() {
+  return apiFetch('/queue/call', { method: 'POST', body: JSON.stringify({}) });
+}
+
 export async function callNextPatient() {
   return apiFetch('/queue/call', { method: 'POST', body: JSON.stringify({}) });
 }
