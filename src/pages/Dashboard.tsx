@@ -1455,7 +1455,8 @@ const Dashboard = () => {
                     <div className="py-6 text-center text-sm text-muted-foreground">No patient data to display.</div>
                   ) : (
                     <div>
-                      <Pie 
+                      <div className="h-56 flex items-end">
+                        <Pie 
                         data={{ 
                           labels: statusLabels, 
                           datasets: [{ 
@@ -1489,12 +1490,13 @@ const Dashboard = () => {
                           }
                         }}
                       />
-                      <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-950 rounded-lg">
-                        <p className="text-xs text-muted-foreground">
-                          <strong>Total Patients:</strong> {patients.length} patients across all statuses
-                        </p>
-                      </div>
                     </div>
+                    <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-950 rounded-lg">
+                      <p className="text-xs text-muted-foreground">
+                        <strong>Total Patients:</strong> {patients.length} patients across all statuses
+                      </p>
+                    </div>
+                  </div>
                   )}
                 </CardContent>
               </Card>
@@ -1511,7 +1513,8 @@ const Dashboard = () => {
                     <div className="py-6 text-center text-sm text-muted-foreground">No patient data to display.</div>
                   ) : (
                     <div>
-                      <Bar 
+                      <div className="h-56 flex items-end">
+                        <Bar 
                         data={{ 
                           labels: ageLabels, 
                           datasets: [{ 
@@ -1560,6 +1563,8 @@ const Dashboard = () => {
                           }
                         }} 
                       />
+                        />
+                      </div>
                       <div className="mt-4 p-3 bg-cyan-50 dark:bg-cyan-950 rounded-lg">
                         <p className="text-xs text-muted-foreground">
                           <strong>Dominant Age Group:</strong> {ageLabels[ageData.indexOf(Math.max(...ageData))] || 'N/A'} with {Math.max(...ageData)} patients
@@ -1582,7 +1587,8 @@ const Dashboard = () => {
                     <div className="py-6 text-center text-sm text-muted-foreground">No patient data to display.</div>
                   ) : (
                     <div>
-                      <Line 
+                      <div className="h-56 flex items-end">
+                        <Line 
                         data={{ 
                           labels: months, 
                           datasets: [{ 
@@ -1638,6 +1644,8 @@ const Dashboard = () => {
                           }
                         }} 
                       />
+                        />
+                      </div>
                       <div className="mt-4 p-3 bg-green-50 dark:bg-green-950 rounded-lg">
                         <p className="text-xs text-muted-foreground">
                           <strong>Total Visits:</strong> {visitsData.reduce((a, b) => a + b, 0)} visits in the last 6 months
