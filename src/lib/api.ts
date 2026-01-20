@@ -158,7 +158,12 @@ export async function getQueueAnalytics(department = null, days = 7) {
   const params = new URLSearchParams();
   if (department) params.append('department', department);
   params.append('days', days.toString());
-  return apiFetch(`/queues/analytics?${params.toString()}`);
+  try {
+    return await apiFetch(`/queues/analytics?${params.toString()}`);
+  } catch (err) {
+    console.debug('getQueueAnalytics failed, returning empty array', err);
+    return [];
+  }
 }
 
 export async function getPatientNotifications(patientId) {
@@ -182,7 +187,12 @@ export async function removeFromQueue(id) {
 }
 
 export async function getBilling() {
-  return apiFetch('/billing');
+  try {
+    return await apiFetch('/billing');
+  } catch (err) {
+    console.debug('getBilling failed, returning empty array', err);
+    return [];
+  }
 }
 
 export async function createBilling(payload) {
