@@ -1563,7 +1563,6 @@ const Dashboard = () => {
                           }
                         }} 
                       />
-                        />
                       </div>
                       <div className="mt-4 p-3 bg-cyan-50 dark:bg-cyan-950 rounded-lg">
                         <p className="text-xs text-muted-foreground">
@@ -1644,7 +1643,6 @@ const Dashboard = () => {
                           }
                         }} 
                       />
-                        />
                       </div>
                       <div className="mt-4 p-3 bg-green-50 dark:bg-green-950 rounded-lg">
                         <p className="text-xs text-muted-foreground">
