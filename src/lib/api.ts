@@ -68,6 +68,10 @@ export async function getPatientAppointments(patientId) {
   return apiFetch(`/appointments/patient/${patientId}`);
 }
 
+export async function getPatient(patientId) {
+  return apiFetch(`/patients/${patientId}`);
+}
+
 export async function getDoctorAppointments(doctorId) {
   return apiFetch(`/appointments/doctor/${doctorId}`);
 }

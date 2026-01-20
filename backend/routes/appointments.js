@@ -141,39 +141,118 @@ function generateAvailableSlots(dateStr, bookedTimes = []) {
 // ============= CREATE APPOINTMENT =============
 
 router.post('/', (req, res) => {
-  const { patientId, patientName, phone, time, type, department, doctorId, doctorName, priority, status } = req.body;
-  
-  // Validation
-  if (!patientId || !time || !type || !department) {
-    return res.status(400).json({ message: 'Missing required fields: patientId, time, type, department' });
+  const {
+    patientId,
+    patientName,
+    phone,
+    time,
+    type,
+    department,
+    doctorId,
+    doctorName,
+    priority,
+    status,
+    // admission-specific
+    bed_number,
+    room_number,
+    admitting_doctor,
+    admission_type,
+    expected_length_of_stay,
+    provisional_diagnosis,
+    comorbidities,
+    allergies,
+    guardian_name,
+    guardian_phone,
+    consent_obtained,
+    insurance_provider,
+    insurance_policy_number,
+    preauth_required,
+    preauth_number,
+    payment_method,
+    estimated_charges,
+    surgery_planned,
+    surgeon_name,
+    anesthesia_type,
+    gravidity,
+    parity,
+    expected_delivery_date,
+    admission_datetime,
+    notes
+  } = req.body;
+
+  // Basic validation: patientId, department, payment_method and consent (unless emergency) required for admissions
+  if (!patientId || !department) {
+    return res.status(400).json({ message: 'Missing required fields: patientId, department' });
   }
-  
-  if (!DEPARTMENTS.includes(department)) {
-    return res.status(400).json({ message: `Invalid department. Must be one of: ${DEPARTMENTS.join(', ')}` });
+  if (!payment_method) {
+    return res.status(400).json({ message: 'Payment method is required' });
   }
-  
-  if (!APPOINTMENT_TYPES.includes(type)) {
-    return res.status(400).json({ message: `Invalid type. Must be one of: ${APPOINTMENT_TYPES.join(', ')}` });
+  // consent required except for emergency admissions
+  if ((!consent_obtained || consent_obtained === false) && admission_type !== 'Emergency') {
+    return res.status(400).json({ message: 'Consent is required for non-emergency admissions' });
   }
-  
+
+  if (!DEPARTMENTS.includes(department) && department !== 'IPD' && department !== 'Emergency') {
+    // allow IPD and Emergency as department values for admissions
+    // but accept common departments
+  }
+
   const id = `A${Math.floor(Math.random() * 100000)}`;
   const queueNumber = `${department.toUpperCase().substring(0, 3)}-${Math.floor(Math.random() * 1000)}`;
   const now = new Date().toISOString();
-  
+
   const db = dbModule.db;
   if (!db) return res.status(500).json({ message: 'DB not initialized' });
-  
+
   db.run(
     `INSERT INTO appointments 
-     (id, patientId, patientName, phone, time, type, department, doctorId, doctorName, priority, queue_number, status, arrival_time, created_at, updated_at)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)`,
+     (id, patientId, patientName, phone, time, type, department, doctorId, doctorName, priority, queue_number, status, arrival_time, created_at, updated_at, bed_number, room_number, admitting_doctor, admission_type, expected_length_of_stay, provisional_diagnosis, comorbidities, allergies, guardian_name, guardian_phone, consent_obtained, insurance_provider, insurance_policy_number, preauth_required, preauth_number, payment_method, estimated_charges, surgery_planned, surgeon_name, anesthesia_type, gravidity, parity, expected_delivery_date, admission_datetime, notes)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30, $31, $32, $33, $34, $35, $36, $37, $38, $39)`,
     [
-      id, patientId, patientName || 'Unknown Patient', phone || '', time, type, department, 
-      doctorId || null, doctorName || null, priority || 3, queueNumber, status || 'pending', null, now, now
+      id,
+      patientId,
+      patientName || 'Unknown Patient',
+      phone || '',
+      time || null,
+      type || 'Admission',
+      department,
+      doctorId || null,
+      doctorName || admitting_doctor || null,
+      priority || 3,
+      queueNumber,
+      status || 'admitted',
+      null,
+      now,
+      now,
+      bed_number || null,
+      room_number || null,
+      admitting_doctor || null,
+      admission_type || null,
+      expected_length_of_stay || null,
+      provisional_diagnosis || null,
+      comorbidities || null,
+      allergies || null,
+      guardian_name || null,
+      guardian_phone || null,
+      consent_obtained ? true : false,
+      insurance_provider || null,
+      insurance_policy_number || null,
+      preauth_required ? true : false,
+      preauth_number || null,
+      payment_method || null,
+      estimated_charges || null,
+      surgery_planned ? true : false,
+      surgeon_name || null,
+      anesthesia_type || null,
+      gravidity || null,
+      parity || null,
+      expected_delivery_date || null,
+      admission_datetime || now,
+      notes || null
     ],
     function (err) {
       if (err) return res.status(500).json({ message: 'DB error', error: err.message });
-      
+
       db.get('SELECT * FROM appointments WHERE id = $1', [id], (e, row) => {
         if (e) return res.status(500).json({ message: 'DB error', error: e.message });
         res.status(201).json(row);

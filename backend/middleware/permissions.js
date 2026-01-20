@@ -25,6 +25,8 @@ const PERMISSIONS = {
     reports: ['view', 'export', 'manage'],
     audit: ['view', 'export'],
     adjustments: ['create', 'read', 'update', 'delete'],
+    ot: ['create', 'read', 'update', 'delete', 'schedule'],
+    cssd: ['create', 'read', 'update', 'delete', 'process'],
   },
 
   // BILLING OFFICER - Can create/manage bills, record payments
@@ -38,6 +40,8 @@ const PERMISSIONS = {
     reports: ['view'],
     audit: [],
     adjustments: ['create', 'read'],
+    ot: ['read'],
+    cssd: ['read'],
   },
 
   // ACCOUNTANT - View-only + reporting
@@ -51,6 +55,8 @@ const PERMISSIONS = {
     reports: ['view', 'export'],
     audit: ['view'],
     adjustments: [],
+    ot: ['read'],
+    cssd: ['read'],
   },
 
   // FRONT DESK - Limited to creating visits only
@@ -64,6 +70,8 @@ const PERMISSIONS = {
     reports: [],
     audit: [],
     adjustments: [],
+    ot: ['create', 'read'],
+    cssd: [],
   },
 
   // DOCTOR - View bills and patient prescriptions
@@ -77,6 +85,8 @@ const PERMISSIONS = {
     reports: [],
     audit: [],
     adjustments: [],
+    ot: ['read'],
+    cssd: [],
   },
 
   // PATIENT - View their own bills
@@ -90,6 +100,8 @@ const PERMISSIONS = {
     reports: [],
     audit: [],
     adjustments: [],
+    ot: [],
+    cssd: [],
   },
 };
 

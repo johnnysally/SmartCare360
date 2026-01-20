@@ -65,30 +65,105 @@ router.get('/:id', (req, res) => {
 });
 
 router.post('/', (req, res) => {
-  const { name, age, phone, lastVisit, status } = req.body;
+  const {
+    name,
+    age,
+    phone,
+    lastVisit,
+    status,
+    patient_type,
+    patient_subtype,
+    preferred_payment_method,
+    email,
+    gender,
+    address,
+    insuranceType,
+    uhid,
+    national_id,
+    marital_status,
+    nationality,
+    alt_phone,
+    county,
+    city,
+    country,
+    dob
+  } = req.body;
   const id = `P${Math.floor(Math.random() * 100000)}`;
   const db2 = dbModule.db;
   if (!db2) return res.status(500).json({ message: 'DB not initialized' });
-  db2.run('INSERT INTO patients (id,name,age,phone,lastVisit,status) VALUES ($1,$2,$3,$4,$5,$6)', [id, name, age || null, phone || '', lastVisit || '', status || 'Active'], function (err) {
-    if (err) return res.status(500).json({ message: 'DB error' });
-    db2.get('SELECT * FROM patients WHERE id = $1', [id], (e, row) => {
-      if (e) return res.status(500).json({ message: 'DB error' });
-      res.status(201).json(row);
-    });
-  });
+  db2.run(
+    'INSERT INTO patients (id,name,age,phone,lastVisit,status,patient_type,patient_subtype,preferred_payment_method,email,gender,address,insurancetype,uhid,national_id,marital_status,nationality,alt_phone,county,city,country,dob) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22)',
+    [
+      id,
+      name,
+      age || null,
+      phone || '',
+      lastVisit || '',
+      status || 'Active',
+      patient_type || null,
+      patient_subtype || null,
+      preferred_payment_method || 'cash',
+      email || '',
+      gender || '',
+      address || '',
+      insuranceType || 'none',
+      uhid || `UHID-${Math.floor(100000 + Math.random() * 899999)}`,
+      national_id || '',
+      marital_status || '',
+      nationality || '',
+      alt_phone || '',
+      county || '',
+      city || '',
+      country || '',
+      dob || ''
+    ],
+    function (err) {
+      if (err) return res.status(500).json({ message: 'DB error', detail: err.message });
+      db2.get('SELECT * FROM patients WHERE id = $1', [id], (e, row) => {
+        if (e) return res.status(500).json({ message: 'DB error' });
+        res.status(201).json(row);
+      });
+    }
+  );
 });
 
 router.put('/:id', (req, res) => {
-  const { name, age, phone, lastVisit, status } = req.body;
+  const {
+    name,
+    age,
+    phone,
+    lastVisit,
+    status,
+    patient_type,
+    patient_subtype,
+    preferred_payment_method,
+    email,
+    gender,
+    address,
+    insuranceType,
+    uhid,
+    national_id,
+    marital_status,
+    nationality,
+    alt_phone,
+    county,
+    city,
+    country,
+    dob
+  } = req.body;
   const db3 = dbModule.db;
   if (!db3) return res.status(500).json({ message: 'DB not initialized' });
-  db3.run('UPDATE patients SET name = $1, age = $2, phone = $3, lastVisit = $4, status = $5 WHERE id = $6', [name, age, phone, lastVisit, status, req.params.id], function (err) {
-    if (err) return res.status(500).json({ message: 'DB error' });
-    db3.get('SELECT * FROM patients WHERE id = $1', [req.params.id], (e, row) => {
-      if (e) return res.status(500).json({ message: 'DB error' });
-      res.json(row);
-    });
-  });
+  db3.run(
+    'UPDATE patients SET name = $1, age = $2, phone = $3, lastVisit = $4, status = $5, patient_type = $6, patient_subtype = $7, preferred_payment_method = $8, email = $9, gender = $10, address = $11, insurancetype = $12, uhid = $13, national_id = $14, marital_status = $15, nationality = $16, alt_phone = $17, county = $18, city = $19, country = $20, dob = $21 WHERE id = $22',
+    [name, age, phone, lastVisit, status, patient_type || null, patient_subtype || null, preferred_payment_method || 'cash', email || '', gender || '', address || '', insuranceType || 'none', uhid || null, national_id || '', marital_status || '', nationality || '', alt_phone || '', county || '', city || '', country || '', dob || '', req.params.id],
+    function (err) {
+      if (err) return res.status(500).json({ message: 'DB error' });
+      db3.get('SELECT * FROM patients WHERE id = $1', [req.params.id], (e, row) => {
+        if (e) return res.status(500).json({ message: 'DB error' });
+        res.json(row);
+      });
+    }
+  );
 });
 
 router.delete('/:id', (req, res) => {
@@ -107,12 +182,12 @@ router.get('/report', async (req, res) => {
   const pool = dbModule.pool;
   if (!pool) return res.status(500).json({ message: 'DB not initialized' });
   try {
-    const result = await pool.query('SELECT id, name, age, phone, lastvisit as lastvisit, status FROM patients ORDER BY name');
+    const result = await pool.query('SELECT id, name, age, phone, lastvisit as lastvisit, status, patient_type, patient_subtype, preferred_payment_method, email, gender, address, insurancetype, uhid, national_id, marital_status, nationality, alt_phone, county, city, country, dob FROM patients ORDER BY name');
     const rows = result.rows || [];
     res.setHeader('Content-Type', 'text/csv');
     res.setHeader('Content-Disposition', 'attachment; filename="patients_report.csv"');
-    const header = ['id','name','age','phone','lastVisit','status'];
-    const lines = [header.join(',')].concat(rows.map(r => [r.id, (r.name||'').replace(/,/g,' '), r.age || '', (r.phone||'').replace(/,/g,' '), r.lastvisit || r.lastVisit || '', r.status || ''].join(',')));
+    const header = ['id','name','age','phone','lastVisit','status','patient_type','patient_subtype','preferred_payment_method','email','gender','address','insuranceType','uhid','national_id','marital_status','nationality','alt_phone','county','city','country','dob'];
+    const lines = [header.join(',')].concat(rows.map(r => [r.id, (r.name||'').replace(/,/g,' '), r.age || '', (r.phone||'').replace(/,/g,' '), r.lastvisit || r.lastVisit || '', r.status || '', r.patient_type || '', r.patient_subtype || '', r.preferred_payment_method || '', (r.email||'').replace(/,/g,' '), r.gender || '', (r.address||'').replace(/,/g,' '), r.insurancetype || '', r.uhid||'', r.national_id||'', r.marital_status||'', r.nationality||'', r.alt_phone||'', r.county||'', r.city||'', r.country||'', r.dob||''].join(',')));
     res.send(lines.join('\n'));
   } catch (err) {
     console.error('Failed to generate patients report', err && err.message);

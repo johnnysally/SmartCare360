@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from "@/components/ui/dialog";
 import { useForm } from "react-hook-form";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { createPatient } from "@/lib/api";
 import { Search, Plus, Filter } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -91,7 +92,9 @@ const Patients = () => {
 };
 
 function PatientForm({ onCreated }: { onCreated?: (p:any)=>void }){
-  const { register, handleSubmit, reset, formState: { errors, isSubmitting } } = useForm();
+  const { register, handleSubmit, reset, watch, setValue, formState: { errors, isSubmitting } } = useForm({ defaultValues: { patientType: 'OPD', paymentMethod: 'cash' } });
+  const patientType = watch('patientType');
+  const paymentMethod = watch('paymentMethod');
   const { toast } = useToast();
   const onSubmit = async (data: any) => {
     try{
@@ -135,6 +138,44 @@ function PatientForm({ onCreated }: { onCreated?: (p:any)=>void }){
         {errors.phone && <p className="text-sm text-destructive mt-1">{errors.phone.message}</p>}
       </div>
       <Input placeholder="Last Visit (optional)" {...register('lastVisit')} />
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <label className="text-sm font-medium block mb-2">Patient Type</label>
+          <Select value={patientType} onValueChange={(v)=>setValue('patientType', v)}>
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="OPD">Outpatient (OPD)</SelectItem>
+              <SelectItem value="IPD">Inpatient (IPD)</SelectItem>
+              <SelectItem value="Emergency">Emergency</SelectItem>
+              <SelectItem value="FollowUp">Follow-Up</SelectItem>
+              <SelectItem value="Referral">Referral</SelectItem>
+              <SelectItem value="Insurance">Insurance/Sponsored</SelectItem>
+              <SelectItem value="Cash">Self-Pay / Cash</SelectItem>
+              <SelectItem value="International">International</SelectItem>
+              <SelectItem value="SpecialCare">Special Care</SelectItem>
+              <SelectItem value="Chronic">Chronic Care</SelectItem>
+              <SelectItem value="DayCare">Day-Care / Short-Stay</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <div>
+          <label className="text-sm font-medium block mb-2">Payment Method</label>
+          <Select value={paymentMethod} onValueChange={(v)=>setValue('paymentMethod', v)}>
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="cash">Cash</SelectItem>
+              <SelectItem value="card">Card</SelectItem>
+              <SelectItem value="mobile">Mobile Money</SelectItem>
+              <SelectItem value="insurance">Insurance</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+      <Input placeholder="Patient Subtype (optional) e.g. Trauma, Maternity" {...register('patientSubType')} />
       <div className="flex justify-end gap-2">
         <Button type="submit" className="btn-gradient" disabled={isSubmitting}>
           {isSubmitting ? 'Creating...' : 'Create'}

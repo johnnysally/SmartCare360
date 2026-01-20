@@ -179,22 +179,32 @@ const Dashboard = () => {
 
   const fetchDashboardData = async () => {
     try {
-      const [patientsData, appointmentsData, usersData, billingData] = await Promise.all([
+      const [patientsData, appointmentsData, usersData, billingData, statsData, queuesData] = await Promise.all([
         getPatients(),
         getAppointments(),
         getUsers(),
-        getBilling()
+        getBilling(),
+        getPatientStats().catch(() => null),
+        getAllQueues().catch(() => ({}))
       ]);
+      
+      // Set all data with comprehensive information
       setPatients(patientsData || []);
       setAppointments(appointmentsData || []);
       setUsers(usersData || []);
       setBilling(billingData || []);
-      try {
-        const stats = await getPatientStats();
-        setBackendStats(stats || null);
-      } catch (e) {
-        setBackendStats(null);
-      }
+      setBackendStats(statsData || null);
+      setAllQueues(queuesData || {});
+      
+      // Log comprehensive data overview
+      console.log('Dashboard Data Loaded:', {
+        totalPatients: (patientsData || []).length,
+        totalAppointments: (appointmentsData || []).length,
+        totalUsers: (usersData || []).length,
+        totalBillingRecords: (billingData || []).length,
+        queueData: Object.keys(queuesData || {}),
+        stats: statsData
+      });
     } catch (err: any) {
       toast({ title: 'Failed to load dashboard data', description: err?.message || '' });
     } finally {
@@ -264,11 +274,13 @@ const Dashboard = () => {
       const result = await createPatient({
         name: formData.fullName,
         phone: formData.phone,
-        email: formData.email,
         age: parseInt(formData.age),
         gender: formData.gender,
         address: formData.address,
-        insuranceType: formData.insuranceType
+        insuranceType: formData.insuranceType,
+        patient_type: formData.patientType,
+        patient_subtype: formData.patientSubType,
+        preferred_payment_method: formData.paymentMethod
       });
 
       toast({
@@ -317,9 +329,35 @@ const Dashboard = () => {
         patientId: formData.patientId,
         visitType: 'IPD',
         department: formData.wardType,
-        priority: 'normal',
-        reason: `Admission: ${formData.admissionReason}`,
-        admissionDeposit: parseFloat(formData.admissionDeposit)
+        priority: formData.admissionType === 'Emergency' ? '1' : '3',
+        reason: `Admission: ${formData.provisionalDiagnosis || formData.admissionReason || ''}`,
+        admissionDeposit: parseFloat(formData.admissionDeposit || 0),
+        // admission specific fields
+        bed_number: formData.bedNumber,
+        room_number: formData.roomNumber,
+        admitting_doctor: formData.admittingDoctor,
+        admission_type: formData.admissionType,
+        expected_length_of_stay: formData.expectedLengthOfStay ? parseInt(formData.expectedLengthOfStay) : null,
+        provisional_diagnosis: formData.provisionalDiagnosis,
+        comorbidities: formData.comorbidities,
+        allergies: formData.allergies,
+        guardian_name: formData.guardianName,
+        guardian_phone: formData.guardianPhone,
+        consent_obtained: !!formData.consentObtained,
+        insurance_provider: formData.insuranceProvider,
+        insurance_policy_number: formData.insurancePolicyNumber,
+        preauth_required: !!formData.preauthRequired,
+        preauth_number: formData.preauthNumber,
+        payment_method: formData.paymentMethod,
+        estimated_charges: formData.estimatedCharges ? parseFloat(formData.estimatedCharges) : null,
+        surgery_planned: !!formData.surgeryPlanned,
+        surgeon_name: formData.surgeonName,
+        anesthesia_type: formData.anesthesiaType,
+        gravidity: formData.gravidity ? parseInt(formData.gravidity) : null,
+        parity: formData.parity ? parseInt(formData.parity) : null,
+        expected_delivery_date: formData.expectedDeliveryDate || null,
+        admission_datetime: formData.admissionDatetime || new Date().toISOString(),
+        notes: formData.notes || ''
       });
 
       toast({
@@ -662,6 +700,7 @@ const Dashboard = () => {
                     <DischargeForm onSubmit={handleDischarge} />
                   </DialogContent>
                 </Dialog>
+                {/* Frontdesk quick-action tiles removed per request */}
               </CardContent>
             </Card>
 
@@ -1004,9 +1043,9 @@ const Dashboard = () => {
             </Card>
           </TabsContent>
 
-          {/* Overview Tab (Original Dashboard) */}
+          {/* Overview Tab (Comprehensive Backend Data Display) */}
           <TabsContent value="overview" className="space-y-6 mt-4">
-            {/* Stats Grid */}
+            {/* Summary Stats Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               {stats.map((stat, index) => (
                 <Card key={index} className="card-hover">
@@ -1027,46 +1066,283 @@ const Dashboard = () => {
               ))}
             </div>
 
+            {/* Front Desk Statistics Summary */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              <Card>
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-3 mb-2">
+                    <Users className="w-5 h-5 text-blue-500" />
+                    <span className="text-sm font-medium">Patients Waiting</span>
+                  </div>
+                  <div className="text-3xl font-bold">{frontDeskStats.patientsWaiting}</div>
+                  <p className="text-xs text-muted-foreground mt-1">In queue for service</p>
+                </CardContent>
+              </Card>
+              
+              <Card>
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-3 mb-2">
+                    <Bed className="w-5 h-5 text-green-500" />
+                    <span className="text-sm font-medium">Admitted Today</span>
+                  </div>
+                  <div className="text-3xl font-bold">{frontDeskStats.patientsAdmitted}</div>
+                  <p className="text-xs text-muted-foreground mt-1">Active admissions</p>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-3 mb-2">
+                    <FileText className="w-5 h-5 text-orange-500" />
+                    <span className="text-sm font-medium">OPD Visits</span>
+                  </div>
+                  <div className="text-3xl font-bold">{frontDeskStats.opdVisitsToday}</div>
+                  <p className="text-xs text-muted-foreground mt-1">Today's visits</p>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-3 mb-2">
+                    <CreditCard className="w-5 h-5 text-purple-500" />
+                    <span className="text-sm font-medium">Today's Collections</span>
+                  </div>
+                  <div className="text-3xl font-bold">KES {frontDeskStats.totalCollectionsToday.toLocaleString()}</div>
+                  <p className="text-xs text-muted-foreground mt-1">Paid today</p>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Patients & Appointments Grid */}
             <div className="grid lg:grid-cols-2 gap-6">
-              {/* Recent Patients */}
+              {/* Active Patients */}
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between">
-                  <CardTitle className="font-display">Recent Patients</CardTitle>
-                  <UserPlus className="w-5 h-5 text-muted-foreground" />
+                  <div>
+                    <CardTitle className="font-display">Active Patients</CardTitle>
+                    <p className="text-xs text-muted-foreground mt-1">Recently registered/checked in</p>
+                  </div>
+                  <Users className="w-5 h-5 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
                     {loading ? (
-                      <div className="py-6 text-center text-sm text-muted-foreground">Loading patients...</div>
-                    ) : recentPatients.length === 0 ? (
-                      <div className="py-6 text-center text-sm text-muted-foreground">No patients yet. Add your first patient!</div>
+                      <div className="py-6 text-center text-sm text-muted-foreground">Loading patient data...</div>
+                    ) : patients.length === 0 ? (
+                      <div className="py-6 text-center text-sm text-muted-foreground">No patient data to display.</div>
                     ) : (
-                      recentPatients.map((patient, index) => (
-                        <div key={index} className="flex items-center justify-between py-2 border-b border-border last:border-0">
-                          <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-medium">
-                              {patient.name.split(" ").map(n => n[0]).join("")}
+                      <>
+                        <div className="space-y-3 max-h-96 overflow-y-auto">
+                          {patients.slice(-10).reverse().map((patient, index) => (
+                            <div key={index} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg hover:bg-muted transition-colors">
+                              <div className="flex items-center gap-3 flex-1">
+                                <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary text-xs font-bold">
+                                  {patient.name?.split(" ").map((n: string) => n[0]).join("") || "?"}
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <div className="font-medium text-sm truncate">{patient.name || "N/A"}</div>
+                                  <div className="text-xs text-muted-foreground">{patient.phone || patient.email || "No contact"}</div>
+                                </div>
+                              </div>
+                              <Badge variant="outline" className="whitespace-nowrap">{patient.status || "Registered"}</Badge>
                             </div>
-                            <div>
-                              <div className="font-medium">{patient.name}</div>
-                              <div className="text-sm text-muted-foreground">{patient.type} • {patient.time}</div>
-                            </div>
-                          </div>
-                          <span className={`text-xs px-2 py-1 rounded-full ${
-                            patient.status === "In Queue" ? "bg-warning/10 text-warning" :
-                            patient.status === "With Doctor" ? "bg-info/10 text-info" :
-                            "bg-success/10 text-success"
-                          }`}>
-                            {patient.status}
-                          </span>
+                          ))}
                         </div>
-                      ))
+                        <div className="pt-3 border-t text-sm text-muted-foreground">
+                          <strong>Total Patients:</strong> {patients.length}
+                        </div>
+                      </>
                     )}
                   </div>
                 </CardContent>
               </Card>
 
-              {/* Quick Actions */}
+              {/* Today's Appointments */}
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between">
+                  <div>
+                    <CardTitle className="font-display">Today's Appointments</CardTitle>
+                    <p className="text-xs text-muted-foreground mt-1">Scheduled and pending appointments</p>
+                  </div>
+                  <Calendar className="w-5 h-5 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    {loading ? (
+                      <div className="py-6 text-center text-sm text-muted-foreground">Loading appointment data...</div>
+                    ) : (
+                      (() => {
+                        const today = new Date().toDateString();
+                        const todayAppointments = appointments.filter(a => 
+                          new Date(a.time || a.createdAt).toDateString() === today
+                        ).slice(-8);
+                        
+                        if (todayAppointments.length === 0) {
+                          return <div className="py-6 text-center text-sm text-muted-foreground">No appointments today.</div>;
+                        }
+                        
+                        return (
+                          <>
+                            <div className="space-y-3 max-h-96 overflow-y-auto">
+                              {todayAppointments.map((apt, idx) => (
+                                <div key={idx} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg hover:bg-muted transition-colors">
+                                  <div className="flex items-center gap-3 flex-1">
+                                    <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 text-xs font-bold">
+                                      {new Date(apt.time || apt.createdAt).getHours().toString().padStart(2, '0')}
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                      <div className="font-medium text-sm truncate">{apt.patientName || apt.patient || "Unknown"}</div>
+                                      <div className="text-xs text-muted-foreground">{apt.type || apt.visitType || "Checkup"}</div>
+                                    </div>
+                                  </div>
+                                  <Badge 
+                                    variant="outline" 
+                                    className={`whitespace-nowrap ${
+                                      apt.status === 'confirmed' ? 'bg-green-100 text-green-700' :
+                                      apt.status === 'pending' ? 'bg-yellow-100 text-yellow-700' :
+                                      apt.status === 'completed' ? 'bg-blue-100 text-blue-700' :
+                                      'bg-gray-100 text-gray-700'
+                                    }`}
+                                  >
+                                    {apt.status || "Pending"}
+                                  </Badge>
+                                </div>
+                              ))}
+                            </div>
+                            <div className="pt-3 border-t text-sm text-muted-foreground">
+                              <strong>Today's Total:</strong> {todayAppointments.length}
+                            </div>
+                          </>
+                        );
+                      })()
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Queue Information by Department */}
+            <Card>
+              <CardHeader>
+                <div>
+                  <CardTitle className="font-display">Queue Status by Department</CardTitle>
+                  <p className="text-xs text-muted-foreground mt-1">Real-time patient distribution</p>
+                </div>
+              </CardHeader>
+              <CardContent>
+                {loading ? (
+                  <div className="py-6 text-center text-sm text-muted-foreground">Loading queue data...</div>
+                ) : Object.keys(allQueues).length === 0 ? (
+                  <div className="py-6 text-center text-sm text-muted-foreground">No queue data available.</div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {Object.entries(allQueues).map(([dept, data]: [string, any], idx) => (
+                      <div key={idx} className="p-4 border rounded-lg hover:border-primary transition-colors">
+                        <div className="flex items-center justify-between mb-3">
+                          <h4 className="font-medium">{dept}</h4>
+                          <Badge variant="secondary">{data.waiting || 0} waiting</Badge>
+                        </div>
+                        <div className="space-y-2 text-sm">
+                          <div className="flex justify-between text-muted-foreground">
+                            <span>Being Served:</span>
+                            <span className="font-medium">{data.being_served || 0}</span>
+                          </div>
+                          <div className="flex justify-between text-muted-foreground">
+                            <span>Completed:</span>
+                            <span className="font-medium">{data.completed || 0}</span>
+                          </div>
+                          <div className="flex justify-between text-muted-foreground">
+                            <span>Average Wait:</span>
+                            <span className="font-medium">{data.avg_wait_time || "N/A"}</span>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Billing Summary */}
+            <Card>
+              <CardHeader>
+                <div>
+                  <CardTitle className="font-display">Billing Summary</CardTitle>
+                  <p className="text-xs text-muted-foreground mt-1">Outstanding bills and payment status</p>
+                </div>
+              </CardHeader>
+              <CardContent>
+                {loading ? (
+                  <div className="py-6 text-center text-sm text-muted-foreground">Loading billing data...</div>
+                ) : billing.length === 0 ? (
+                  <div className="py-6 text-center text-sm text-muted-foreground">No billing records.</div>
+                ) : (
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                      <div className="p-3 bg-red-50 dark:bg-red-950 rounded-lg">
+                        <div className="text-xs text-muted-foreground mb-1">Outstanding</div>
+                        <div className="text-lg font-bold text-red-600">
+                          KES {billing.filter(b => b.status === 'pending').reduce((sum, b) => sum + (b.amount || 0), 0).toLocaleString()}
+                        </div>
+                      </div>
+                      <div className="p-3 bg-green-50 dark:bg-green-950 rounded-lg">
+                        <div className="text-xs text-muted-foreground mb-1">Paid Today</div>
+                        <div className="text-lg font-bold text-green-600">
+                          KES {billing.filter(b => b.status === 'paid' && new Date(b.createdAt).toDateString() === new Date().toDateString()).reduce((sum, b) => sum + (b.amount || 0), 0).toLocaleString()}
+                        </div>
+                      </div>
+                      <div className="p-3 bg-blue-50 dark:bg-blue-950 rounded-lg">
+                        <div className="text-xs text-muted-foreground mb-1">Total Patients Billed</div>
+                        <div className="text-lg font-bold text-blue-600">
+                          {new Set(billing.map(b => b.patientId)).size}
+                        </div>
+                      </div>
+                      <div className="p-3 bg-orange-50 dark:bg-orange-950 rounded-lg">
+                        <div className="text-xs text-muted-foreground mb-1">Pending Payments</div>
+                        <div className="text-lg font-bold text-orange-600">
+                          {billing.filter(b => b.status === 'pending').length}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-sm">
+                        <thead className="border-b">
+                          <tr>
+                            <th className="text-left py-2 px-2">Patient</th>
+                            <th className="text-left py-2 px-2">Amount</th>
+                            <th className="text-left py-2 px-2">Status</th>
+                            <th className="text-left py-2 px-2">Date</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {billing.slice(-10).reverse().map((bill, idx) => (
+                            <tr key={idx} className="border-b hover:bg-muted/50 transition-colors">
+                              <td className="py-2 px-2">{bill.patientName || "N/A"}</td>
+                              <td className="py-2 px-2 font-medium">KES {(bill.amount || 0).toLocaleString()}</td>
+                              <td className="py-2 px-2">
+                                <Badge 
+                                  variant="outline"
+                                  className={bill.status === 'paid' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}
+                                >
+                                  {bill.status || "Pending"}
+                                </Badge>
+                              </td>
+                              <td className="py-2 px-2 text-muted-foreground">
+                                {bill.createdAt ? new Date(bill.createdAt).toLocaleDateString() : "N/A"}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Quick Actions & Downloads */}
+            <div className="grid lg:grid-cols-2 gap-6">
               <Card>
                 <CardHeader>
                   <CardTitle className="font-display">Quick Actions</CardTitle>
@@ -1139,28 +1415,33 @@ const Dashboard = () => {
                   </button>
                 </CardContent>
               </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle className="font-display">Download Reports</CardTitle>
+                </CardHeader>
+                <CardContent className="flex gap-3">
+                  <Button onClick={async () => {
+                    try {
+                      const blob = await downloadReport('patients');
+                      const url = URL.createObjectURL(blob);
+                      const a = document.createElement('a');
+                      a.href = url; a.download = 'patients_report.csv'; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+                    } catch (e: any) { toast({ title: 'Failed to download patients report', description: e?.message || '' }); }
+                  }} className="flex-1">Download Patients</Button>
+                  <Button onClick={async () => {
+                    try {
+                      const blob = await downloadReport('billing');
+                      const url = URL.createObjectURL(blob);
+                      const a = document.createElement('a');
+                      a.href = url; a.download = 'billing_report.csv'; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+                    } catch (e: any) { toast({ title: 'Failed to download billing report', description: e?.message || '' }); }
+                  }} className="flex-1">Download Billing</Button>
+                </CardContent>
+              </Card>
             </div>
 
-            {/* Charts */}
-            <div className="flex items-center justify-end gap-3">
-              <Button onClick={async () => {
-                try {
-                  const blob = await downloadReport('patients');
-                  const url = URL.createObjectURL(blob);
-                  const a = document.createElement('a');
-                  a.href = url; a.download = 'patients_report.csv'; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
-                } catch (e: any) { toast({ title: 'Failed to download patients report', description: e?.message || '' }); }
-              }}>Download Patients</Button>
-              <Button onClick={async () => {
-                try {
-                  const blob = await downloadReport('billing');
-                  const url = URL.createObjectURL(blob);
-                  const a = document.createElement('a');
-                  a.href = url; a.download = 'billing_report.csv'; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
-                } catch (e: any) { toast({ title: 'Failed to download billing report', description: e?.message || '' }); }
-              }}>Download Billing</Button>
-            </div>
-
+            {/* Data Analytics Charts */}
             <div className="grid lg:grid-cols-3 gap-6">
               <Card>
                 <CardHeader>

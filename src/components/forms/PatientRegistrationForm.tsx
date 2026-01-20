@@ -19,16 +19,20 @@ export function PatientRegistrationForm({ onSubmit }: PatientRegistrationFormPro
     defaultValues: {
       fullName: '',
       phone: '',
-      email: '',
       age: '',
       gender: 'male',
       address: '',
-      insuranceType: 'none'
+      insuranceType: 'none',
+      patientType: 'OPD',
+      patientSubType: '',
+      paymentMethod: 'cash'
     }
   });
 
   const gender = watch('gender');
   const insuranceType = watch('insuranceType');
+  const patientType = watch('patientType');
+  const paymentMethod = watch('paymentMethod');
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
@@ -38,7 +42,6 @@ export function PatientRegistrationForm({ onSubmit }: PatientRegistrationFormPro
       </div>
 
       <div className="grid grid-cols-2 gap-4">
-        <Input type="email" placeholder="Email" {...register('email')} />
         <Input type="number" placeholder="Age" {...register('age')} />
       </div>
 
@@ -70,6 +73,49 @@ export function PatientRegistrationForm({ onSubmit }: PatientRegistrationFormPro
             </SelectContent>
           </Select>
         </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <label className="text-sm font-medium block mb-2">Patient Type</label>
+          <Select value={patientType} onValueChange={(value) => setValue('patientType', value)}>
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="OPD">Outpatient (OPD)</SelectItem>
+              <SelectItem value="IPD">Inpatient (IPD)</SelectItem>
+              <SelectItem value="Emergency">Emergency</SelectItem>
+              <SelectItem value="FollowUp">Follow-Up</SelectItem>
+              <SelectItem value="Referral">Referral</SelectItem>
+              <SelectItem value="Insurance">Insurance/Sponsored</SelectItem>
+              <SelectItem value="Cash">Self-Pay / Cash</SelectItem>
+              <SelectItem value="International">International</SelectItem>
+              <SelectItem value="SpecialCare">Special Care</SelectItem>
+              <SelectItem value="Chronic">Chronic Care</SelectItem>
+              <SelectItem value="DayCare">Day-Care / Short-Stay</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div>
+          <label className="text-sm font-medium block mb-2">Payment Method</label>
+          <Select value={paymentMethod} onValueChange={(value) => setValue('paymentMethod', value)}>
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="cash">Cash</SelectItem>
+              <SelectItem value="card">Card</SelectItem>
+              <SelectItem value="mobile">Mobile Money</SelectItem>
+              <SelectItem value="insurance">Insurance</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 gap-4">
+        <Input placeholder="Patient Subtype (optional) e.g. Trauma, Maternity" {...register('patientSubType')} />
       </div>
 
       <Input placeholder="Address" {...register('address')} />

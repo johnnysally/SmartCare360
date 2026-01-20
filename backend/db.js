@@ -71,7 +71,10 @@ async function init() {
       age INTEGER,
       phone TEXT,
       lastVisit TEXT,
-      status TEXT
+      status TEXT,
+      patient_type TEXT,
+      patient_subtype TEXT,
+      preferred_payment_method TEXT
     )`,
     `CREATE TABLE IF NOT EXISTS appointments (
       id TEXT PRIMARY KEY,
@@ -239,6 +242,28 @@ async function init() {
       avgRating REAL,
       totalEarnings REAL,
       patientsServed INTEGER,
+      created_at TEXT
+    )`,
+    `CREATE TABLE IF NOT EXISTS ot_bookings (
+      id TEXT PRIMARY KEY,
+      patientId TEXT,
+      patientName TEXT,
+      scheduledAt TEXT,
+      operatingRoom TEXT,
+      surgeonId TEXT,
+      status TEXT,
+      notes TEXT,
+      created_at TEXT,
+      updated_at TEXT
+    )`,
+    `CREATE TABLE IF NOT EXISTS sterilization_cycles (
+      id TEXT PRIMARY KEY,
+      instrument_set_id TEXT,
+      cycleStart TEXT,
+      cycleEnd TEXT,
+      status TEXT,
+      technicianId TEXT,
+      notes TEXT,
       created_at TEXT
     )`,
     `CREATE TABLE IF NOT EXISTS pharmacy_orders (
@@ -436,6 +461,59 @@ async function init() {
     `ALTER TABLE appointments ADD COLUMN IF NOT EXISTS updated_at TEXT`,
   ];
 
+  // Ensure patient table has new columns for patient type, subtype and payment preferences
+  alterQueries.push(
+    `ALTER TABLE patients ADD COLUMN IF NOT EXISTS patient_type TEXT`,
+    `ALTER TABLE patients ADD COLUMN IF NOT EXISTS patient_subtype TEXT`,
+    `ALTER TABLE patients ADD COLUMN IF NOT EXISTS preferred_payment_method TEXT`,
+    `ALTER TABLE patients ADD COLUMN IF NOT EXISTS email TEXT`,
+    `ALTER TABLE patients ADD COLUMN IF NOT EXISTS gender TEXT`,
+    `ALTER TABLE patients ADD COLUMN IF NOT EXISTS address TEXT`,
+    `ALTER TABLE patients ADD COLUMN IF NOT EXISTS insurancetype TEXT`
+  );
+
+  // Additional patient identification and contact fields
+  alterQueries.push(
+    `ALTER TABLE patients ADD COLUMN IF NOT EXISTS uhid TEXT`,
+    `ALTER TABLE patients ADD COLUMN IF NOT EXISTS national_id TEXT`,
+    `ALTER TABLE patients ADD COLUMN IF NOT EXISTS marital_status TEXT`,
+    `ALTER TABLE patients ADD COLUMN IF NOT EXISTS nationality TEXT`,
+    `ALTER TABLE patients ADD COLUMN IF NOT EXISTS alt_phone TEXT`,
+    `ALTER TABLE patients ADD COLUMN IF NOT EXISTS county TEXT`,
+    `ALTER TABLE patients ADD COLUMN IF NOT EXISTS city TEXT`,
+    `ALTER TABLE patients ADD COLUMN IF NOT EXISTS country TEXT`,
+    `ALTER TABLE patients ADD COLUMN IF NOT EXISTS dob TEXT`
+  );
+
+  // Admission / appointment extra fields for inpatient workflows
+  alterQueries.push(
+    `ALTER TABLE appointments ADD COLUMN IF NOT EXISTS bed_number TEXT`,
+    `ALTER TABLE appointments ADD COLUMN IF NOT EXISTS room_number TEXT`,
+    `ALTER TABLE appointments ADD COLUMN IF NOT EXISTS admitting_doctor TEXT`,
+    `ALTER TABLE appointments ADD COLUMN IF NOT EXISTS admission_type TEXT`,
+    `ALTER TABLE appointments ADD COLUMN IF NOT EXISTS expected_length_of_stay INTEGER`,
+    `ALTER TABLE appointments ADD COLUMN IF NOT EXISTS provisional_diagnosis TEXT`,
+    `ALTER TABLE appointments ADD COLUMN IF NOT EXISTS comorbidities TEXT`,
+    `ALTER TABLE appointments ADD COLUMN IF NOT EXISTS allergies TEXT`,
+    `ALTER TABLE appointments ADD COLUMN IF NOT EXISTS guardian_name TEXT`,
+    `ALTER TABLE appointments ADD COLUMN IF NOT EXISTS guardian_phone TEXT`,
+    `ALTER TABLE appointments ADD COLUMN IF NOT EXISTS consent_obtained BOOLEAN DEFAULT FALSE`,
+    `ALTER TABLE appointments ADD COLUMN IF NOT EXISTS insurance_provider TEXT`,
+    `ALTER TABLE appointments ADD COLUMN IF NOT EXISTS insurance_policy_number TEXT`,
+    `ALTER TABLE appointments ADD COLUMN IF NOT EXISTS preauth_required BOOLEAN DEFAULT FALSE`,
+    `ALTER TABLE appointments ADD COLUMN IF NOT EXISTS preauth_number TEXT`,
+    `ALTER TABLE appointments ADD COLUMN IF NOT EXISTS payment_method TEXT`,
+    `ALTER TABLE appointments ADD COLUMN IF NOT EXISTS estimated_charges REAL`,
+    `ALTER TABLE appointments ADD COLUMN IF NOT EXISTS surgery_planned BOOLEAN DEFAULT FALSE`,
+    `ALTER TABLE appointments ADD COLUMN IF NOT EXISTS surgeon_name TEXT`,
+    `ALTER TABLE appointments ADD COLUMN IF NOT EXISTS anesthesia_type TEXT`,
+    `ALTER TABLE appointments ADD COLUMN IF NOT EXISTS gravidity INTEGER`,
+    `ALTER TABLE appointments ADD COLUMN IF NOT EXISTS parity INTEGER`,
+    `ALTER TABLE appointments ADD COLUMN IF NOT EXISTS expected_delivery_date TEXT`,
+    `ALTER TABLE appointments ADD COLUMN IF NOT EXISTS admission_datetime TEXT`,
+    `ALTER TABLE appointments ADD COLUMN IF NOT EXISTS notes TEXT`
+  );
+
   for (const aq of alterQueries) {
     try {
       await client.query(aq);
@@ -473,6 +551,9 @@ async function init() {
     `CREATE INDEX IF NOT EXISTS idx_patient_visits_patientId ON patient_visits (patientId)`,
     `CREATE INDEX IF NOT EXISTS idx_patient_visits_department ON patient_visits (department)`,
     `CREATE INDEX IF NOT EXISTS idx_patient_visits_status ON patient_visits (status)`,
+    `CREATE INDEX IF NOT EXISTS idx_ot_bookings_scheduledAt ON ot_bookings (scheduledAt)`,
+    `CREATE INDEX IF NOT EXISTS idx_ot_bookings_patientId ON ot_bookings (patientId)`,
+    `CREATE INDEX IF NOT EXISTS idx_sterilization_cycles_instrument_set ON sterilization_cycles (instrument_set_id)`,
     `CREATE INDEX IF NOT EXISTS idx_bill_items_visitId ON bill_items (visitId)`,
     `CREATE INDEX IF NOT EXISTS idx_bill_items_itemType ON bill_items (itemType)`,
     `CREATE INDEX IF NOT EXISTS idx_bills_patientId ON bills (patientId)`,

@@ -14,6 +14,10 @@ import Billing from "./pages/Billing";
 import Pharmacy from "./pages/Pharmacy";
 import Telemedicine from "./pages/Telemedicine";
 import Analytics from "./pages/Analytics";
+// Frontdesk / Quick flows
+import FrontdeskFlows from "./pages/frontdesk/FrontdeskFlows";
+import QuickRegistrationPage from "./pages/frontdesk/QuickRegistration";
+import OTBooking from "./pages/ot/OTBooking";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import NotFound from "./pages/NotFound";
 
@@ -136,6 +140,9 @@ const App = () => (
           <Route path="/pharmacy" element={<ProtectedRoute><Pharmacy /></ProtectedRoute>} />
           <Route path="/telemedicine" element={<ProtectedRoute><Telemedicine /></ProtectedRoute>} />
           <Route path="/analytics" element={<ProtectedRoute><Analytics /></ProtectedRoute>} />
+          <Route path="/frontdesk" element={<ProtectedRoute><FrontdeskFlows /></ProtectedRoute>} />
+          <Route path="/quick-registration" element={<ProtectedRoute><QuickRegistrationPage /></ProtectedRoute>} />
+          <Route path="/ot" element={<ProtectedRoute><OTBooking /></ProtectedRoute>} />
           
           {/* Doctor Routes */}
           <Route path="/doctor/dashboard" element={<ProtectedRoute><DoctorDashboard /></ProtectedRoute>} />
