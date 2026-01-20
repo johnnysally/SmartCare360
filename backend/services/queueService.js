@@ -250,10 +250,10 @@ async function getQueueStats(department = null) {
         COUNT(CASE WHEN status = 'waiting' THEN 1 END) as waiting,
         COUNT(CASE WHEN status = 'serving' THEN 1 END) as serving,
         COUNT(CASE WHEN status = 'completed' THEN 1 END) as completed,
-        ROUND(AVG(EXTRACT(EPOCH FROM (call_time - arrival_time)))::numeric, 0)::integer as avg_wait_seconds,
-        MAX(EXTRACT(EPOCH FROM (call_time - arrival_time)))::integer as max_wait_seconds
+        ROUND(AVG(EXTRACT(EPOCH FROM (call_time::timestamptz - arrival_time::timestamptz)))::numeric, 0)::integer as avg_wait_seconds,
+        MAX(EXTRACT(EPOCH FROM (call_time::timestamptz - arrival_time::timestamptz)))::integer as max_wait_seconds
       FROM queues 
-      WHERE DATE(created_at) = CURRENT_DATE ${whereDept}
+      WHERE (created_at::date) = CURRENT_DATE ${whereDept}
     `;
 
     db.get(sql, [], (err, stats) => {
@@ -319,7 +319,7 @@ async function getAnalyticsReport(department = null, days = 7) {
         max_wait_time_seconds,
         congestion_level
       FROM queue_analytics 
-      WHERE date >= CURRENT_DATE - INTERVAL '${days} days' ${whereDept}
+      WHERE (date::date) >= (CURRENT_DATE - INTERVAL '${days} days') ${whereDept}
       ORDER BY date DESC, department
     `;
 
