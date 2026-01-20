@@ -76,7 +76,7 @@ router.get('/doctor/:doctorId', (req, res) => {
   if (!db) return res.status(500).json({ message: 'DB not initialized' });
   
   db.all(
-    'SELECT * FROM appointments WHERE doctor_id = $1 ORDER BY time DESC',
+    'SELECT * FROM appointments WHERE doctorId = $1 OR doctor_id = $1 ORDER BY time DESC',
     [req.params.doctorId],
     (err, rows) => {
       if (err) return res.status(500).json({ message: 'DB error', error: err.message });
@@ -98,7 +98,7 @@ router.get('/doctor/:doctorId/availability', (req, res) => {
   
   db.all(
     `SELECT time FROM appointments 
-     WHERE doctor_id = $1 AND DATE(time) = $2 AND status != $3
+     WHERE (doctorId = $1 OR doctor_id = $1) AND DATE(time) = $2 AND status != $3
      ORDER BY time ASC`,
     [req.params.doctorId, dateStart, 'cancelled'],
     (err, rows) => {
@@ -114,15 +114,25 @@ router.get('/doctor/:doctorId/availability', (req, res) => {
 // Helper: Generate available time slots (30-min intervals, 9 AM to 5 PM)
 function generateAvailableSlots(dateStr, bookedTimes = []) {
   const slots = [];
-  const baseDate = new Date(dateStr + 'T09:00:00');
-  const endDate = new Date(dateStr + 'T17:00:00');
   
-  while (baseDate <= endDate) {
-    const slotTime = baseDate.toISOString();
+  // Parse the date string safely
+  const dateOnly = dateStr.split('T')[0]; // Get YYYY-MM-DD
+  const baseDate = new Date(dateOnly + 'T09:00:00Z');
+  const endDate = new Date(dateOnly + 'T17:00:00Z');
+  
+  // Make sure we don't go backwards
+  if (isNaN(baseDate.getTime()) || isNaN(endDate.getTime())) {
+    console.warn('Invalid date string:', dateStr);
+    return [];
+  }
+  
+  const slotDate = new Date(baseDate);
+  while (slotDate <= endDate) {
+    const slotTime = slotDate.toISOString();
     if (!bookedTimes.includes(slotTime)) {
       slots.push(slotTime);
     }
-    baseDate.setMinutes(baseDate.getMinutes() + 30);
+    slotDate.setMinutes(slotDate.getMinutes() + 30);
   }
   
   return slots;
@@ -155,11 +165,11 @@ router.post('/', (req, res) => {
   
   db.run(
     `INSERT INTO appointments 
-     (id, patientId, patientName, phone, time, type, department, doctorId, doctorName, priority, queue_number, status, arrival_time, created_at)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)`,
+     (id, patientId, patientName, phone, time, type, department, doctorId, doctorName, priority, queue_number, status, arrival_time, created_at, updated_at)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)`,
     [
-      id, patientId, patientName, phone, time, type, department, doctorId || null, 
-      doctorName || null, priority || 3, queueNumber, status || 'pending', null, now
+      id, patientId, patientName || 'Unknown Patient', phone || '', time, type, department, 
+      doctorId || null, doctorName || null, priority || 3, queueNumber, status || 'pending', null, now, now
     ],
     function (err) {
       if (err) return res.status(500).json({ message: 'DB error', error: err.message });

@@ -76,6 +76,8 @@ async function init() {
     `CREATE TABLE IF NOT EXISTS appointments (
       id TEXT PRIMARY KEY,
       patientId TEXT,
+      patientName TEXT,
+      phone TEXT,
       time TEXT,
       type TEXT,
       status TEXT,
@@ -85,10 +87,14 @@ async function init() {
       priority INTEGER DEFAULT 3,
       department TEXT,
       queue_number TEXT,
+      doctorId TEXT,
+      doctorName TEXT,
       arrival_time TEXT,
       service_start_time TEXT,
       service_end_time TEXT,
-      next_department TEXT
+      next_department TEXT,
+      created_at TEXT,
+      updated_at TEXT
     )`,
     `CREATE TABLE IF NOT EXISTS queues (
       id TEXT PRIMARY KEY,
@@ -154,9 +160,86 @@ async function init() {
     `CREATE TABLE IF NOT EXISTS telemedicine_sessions (
       id TEXT PRIMARY KEY,
       patientId TEXT,
+      patientName TEXT,
       doctorId TEXT,
+      doctorName TEXT,
       scheduledAt TEXT,
-      status TEXT
+      startedAt TEXT,
+      endedAt TEXT,
+      status TEXT,
+      duration INTEGER,
+      callQuality TEXT,
+      recordingUrl TEXT,
+      recordingDuration INTEGER,
+      notes TEXT,
+      created_at TEXT,
+      updated_at TEXT
+    )`,
+    `CREATE TABLE IF NOT EXISTS telemedicine_chat (
+      id TEXT PRIMARY KEY,
+      sessionId TEXT,
+      senderId TEXT,
+      senderName TEXT,
+      senderRole TEXT,
+      message TEXT,
+      messageType TEXT,
+      created_at TEXT
+    )`,
+    `CREATE TABLE IF NOT EXISTS telemedicine_prescriptions (
+      id TEXT PRIMARY KEY,
+      sessionId TEXT,
+      patientId TEXT,
+      doctorId TEXT,
+      doctorName TEXT,
+      medicineName TEXT,
+      dosage TEXT,
+      frequency TEXT,
+      duration TEXT,
+      instructions TEXT,
+      status TEXT,
+      created_at TEXT,
+      updated_at TEXT
+    )`,
+    `CREATE TABLE IF NOT EXISTS doctor_profiles (
+      id TEXT PRIMARY KEY,
+      doctorId TEXT UNIQUE,
+      firstName TEXT,
+      lastName TEXT,
+      email TEXT,
+      phone TEXT,
+      specialty TEXT,
+      qualifications TEXT,
+      experience INTEGER,
+      bio TEXT,
+      profileImage TEXT,
+      isAvailable BOOLEAN,
+      consultationFee REAL,
+      languages TEXT,
+      clinicAddress TEXT,
+      rating REAL,
+      totalConsultations INTEGER,
+      created_at TEXT,
+      updated_at TEXT
+    )`,
+    `CREATE TABLE IF NOT EXISTS doctor_availability (
+      id TEXT PRIMARY KEY,
+      doctorId TEXT,
+      dayOfWeek TEXT,
+      startTime TEXT,
+      endTime TEXT,
+      maxPatientsPerDay INTEGER,
+      created_at TEXT
+    )`,
+    `CREATE TABLE IF NOT EXISTS telemedicine_analytics (
+      id TEXT PRIMARY KEY,
+      doctorId TEXT,
+      date TEXT,
+      totalSessions INTEGER,
+      avgDuration INTEGER,
+      avgRating REAL,
+      totalEarnings REAL,
+      patientsServed INTEGER,
+      created_at TEXT
     )`,
     `CREATE TABLE IF NOT EXISTS pharmacy_orders (
       id TEXT PRIMARY KEY,
@@ -222,6 +305,111 @@ async function init() {
       verified_by TEXT,
       created_at TEXT
     )`,
+    `CREATE TABLE IF NOT EXISTS patient_visits (
+      id TEXT PRIMARY KEY,
+      patientId TEXT,
+      patientName TEXT,
+      visitType TEXT,
+      department TEXT,
+      doctorId TEXT,
+      status TEXT,
+      notes TEXT,
+      created_at TEXT,
+      updated_at TEXT
+    )`,
+    `CREATE TABLE IF NOT EXISTS bill_items (
+      id TEXT PRIMARY KEY,
+      visitId TEXT,
+      itemType TEXT,
+      description TEXT,
+      quantity REAL,
+      unitPrice REAL,
+      subtotal REAL,
+      department TEXT,
+      taxable BOOLEAN,
+      status TEXT,
+      created_at TEXT
+    )`,
+    `CREATE TABLE IF NOT EXISTS bills (
+      id TEXT PRIMARY KEY,
+      visitId TEXT,
+      patientId TEXT,
+      subtotal REAL,
+      tax REAL,
+      total REAL,
+      insuranceCoverage REAL,
+      patientPayable REAL,
+      currencyCode TEXT,
+      insuranceId TEXT,
+      governmentSchemeId TEXT,
+      status TEXT,
+      created_at TEXT,
+      updated_at TEXT
+    )`,
+    `CREATE TABLE IF NOT EXISTS payments (
+      id TEXT PRIMARY KEY,
+      billId TEXT,
+      amount REAL,
+      paymentMethod TEXT,
+      reference TEXT,
+      status TEXT,
+      notes TEXT,
+      created_at TEXT
+    )`,
+    `CREATE TABLE IF NOT EXISTS insurance_policies (
+      id TEXT PRIMARY KEY,
+      patientId TEXT,
+      insurerName TEXT,
+      policyNumber TEXT,
+      coveragePercentage REAL,
+      copay REAL,
+      deductible REAL,
+      coverageLimit REAL,
+      status TEXT,
+      created_at TEXT,
+      updated_at TEXT
+    )`,
+    `CREATE TABLE IF NOT EXISTS government_schemes (
+      id TEXT PRIMARY KEY,
+      schemeType TEXT,
+      schemeCode TEXT,
+      name TEXT,
+      coveragePercentage REAL,
+      status TEXT,
+      created_at TEXT
+    )`,
+    `CREATE TABLE IF NOT EXISTS refunds (
+      id TEXT PRIMARY KEY,
+      billId TEXT,
+      amount REAL,
+      reason TEXT,
+      status TEXT,
+      created_at TEXT
+    )`,
+    `CREATE TABLE IF NOT EXISTS adjustments (
+      id TEXT PRIMARY KEY,
+      billId TEXT,
+      amount REAL,
+      adjustmentType TEXT,
+      reason TEXT,
+      created_at TEXT
+    )`,
+    `CREATE TABLE IF NOT EXISTS audit_trail (
+      id TEXT PRIMARY KEY,
+      billId TEXT,
+      action TEXT,
+      userId TEXT,
+      details TEXT,
+      created_at TEXT
+    )`,
+    `CREATE TABLE IF NOT EXISTS patient_scheme_links (
+      id TEXT PRIMARY KEY,
+      patientId TEXT,
+      schemeId TEXT,
+      schemeNumber TEXT,
+      status TEXT,
+      created_at TEXT
+    )`,
   ];
 
   for (const q of createQueries) {
@@ -230,7 +418,11 @@ async function init() {
 
   // Add missing columns to appointments table if they don't exist
   const alterQueries = [
+    `ALTER TABLE appointments ADD COLUMN IF NOT EXISTS patientName TEXT`,
+    `ALTER TABLE appointments ADD COLUMN IF NOT EXISTS phone TEXT`,
     `ALTER TABLE appointments ADD COLUMN IF NOT EXISTS department TEXT`,
+    `ALTER TABLE appointments ADD COLUMN IF NOT EXISTS doctorId TEXT`,
+    `ALTER TABLE appointments ADD COLUMN IF NOT EXISTS doctorName TEXT`,
     `ALTER TABLE appointments ADD COLUMN IF NOT EXISTS priority INTEGER DEFAULT 3`,
     `ALTER TABLE appointments ADD COLUMN IF NOT EXISTS queue_number TEXT`,
     `ALTER TABLE appointments ADD COLUMN IF NOT EXISTS arrival_time TEXT`,
@@ -240,6 +432,8 @@ async function init() {
     `ALTER TABLE appointments ADD COLUMN IF NOT EXISTS called_at TEXT`,
     `ALTER TABLE appointments ADD COLUMN IF NOT EXISTS completed_at TEXT`,
     `ALTER TABLE appointments ADD COLUMN IF NOT EXISTS skip_reason TEXT`,
+    `ALTER TABLE appointments ADD COLUMN IF NOT EXISTS created_at TEXT`,
+    `ALTER TABLE appointments ADD COLUMN IF NOT EXISTS updated_at TEXT`,
   ];
 
   for (const aq of alterQueries) {
@@ -275,7 +469,24 @@ async function init() {
     `CREATE INDEX IF NOT EXISTS idx_medication_orders_ward_id ON medication_orders (ward_id)`,
     `CREATE INDEX IF NOT EXISTS idx_medication_orders_due_time ON medication_orders (due_time)`,
     `CREATE INDEX IF NOT EXISTS idx_medication_logs_medication_id ON medication_administration_logs (medication_order_id)`,
-    `CREATE INDEX IF NOT EXISTS idx_medication_logs_nurse_id ON medication_administration_logs (nurse_id)`
+    `CREATE INDEX IF NOT EXISTS idx_medication_logs_nurse_id ON medication_administration_logs (nurse_id)`,
+    `CREATE INDEX IF NOT EXISTS idx_patient_visits_patientId ON patient_visits (patientId)`,
+    `CREATE INDEX IF NOT EXISTS idx_patient_visits_department ON patient_visits (department)`,
+    `CREATE INDEX IF NOT EXISTS idx_patient_visits_status ON patient_visits (status)`,
+    `CREATE INDEX IF NOT EXISTS idx_bill_items_visitId ON bill_items (visitId)`,
+    `CREATE INDEX IF NOT EXISTS idx_bill_items_itemType ON bill_items (itemType)`,
+    `CREATE INDEX IF NOT EXISTS idx_bills_patientId ON bills (patientId)`,
+    `CREATE INDEX IF NOT EXISTS idx_bills_visitId ON bills (visitId)`,
+    `CREATE INDEX IF NOT EXISTS idx_bills_status ON bills (status)`,
+    `CREATE INDEX IF NOT EXISTS idx_bills_insuranceId ON bills (insuranceId)`,
+    `CREATE INDEX IF NOT EXISTS idx_payments_billId ON payments (billId)`,
+    `CREATE INDEX IF NOT EXISTS idx_payments_paymentMethod ON payments (paymentMethod)`,
+    `CREATE INDEX IF NOT EXISTS idx_insurance_policies_patientId ON insurance_policies (patientId)`,
+    `CREATE INDEX IF NOT EXISTS idx_refunds_billId ON refunds (billId)`,
+    `CREATE INDEX IF NOT EXISTS idx_adjustments_billId ON adjustments (billId)`,
+    `CREATE INDEX IF NOT EXISTS idx_audit_trail_billId ON audit_trail (billId)`,
+    `CREATE INDEX IF NOT EXISTS idx_patient_scheme_links_patientId ON patient_scheme_links (patientId)`,
+    `CREATE INDEX IF NOT EXISTS idx_patient_scheme_links_schemeId ON patient_scheme_links (schemeId)`,
   ];
 
   for (const iq of indexQueries) {

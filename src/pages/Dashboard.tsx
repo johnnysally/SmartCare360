@@ -3,13 +3,32 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Users, Calendar, CreditCard, Activity, TrendingUp, Clock, UserPlus, AlertTriangle, AlertCircle } from "lucide-react";
+import {
+  Users,
+  Calendar,
+  CreditCard,
+  Activity,
+  TrendingUp,
+  Clock,
+  UserPlus,
+  AlertTriangle,
+  AlertCircle,
+  Bed,
+  LogOut,
+  FileText,
+  BarChart3,
+  Settings,
+  CheckCircle,
+  Phone,
+  Search,
+  ArrowRight,
+} from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useForm } from "react-hook-form";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { createPatient, createAppointment, createBilling, getPatients, getAppointments, getUsers, getBilling, getPatientStats, checkInPatient, getAllQueues, getQueueAnalytics } from "@/lib/api";
+import { createPatient, createAppointment, createBilling, getPatients, getAppointments, getUsers, getBilling, getPatientStats, checkInPatient, getAllQueues, getQueueAnalytics, updateAppointment } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 import { useEffect } from "react";
 import {
@@ -34,8 +53,13 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { downloadReport } from '@/lib/api';
+import { PatientRegistrationForm } from '@/components/forms/PatientRegistrationForm';
+import { VisitCreationForm } from '@/components/forms/VisitCreationForm';
+import { AdmissionForm } from '@/components/forms/AdmissionForm';
+import { DischargeForm } from '@/components/forms/DischargeForm';
 
 const DEPARTMENTS = ['OPD', 'Emergency', 'Laboratory', 'Radiology', 'Pharmacy', 'Billing'];
+const VISIT_TYPES = ['OPD', 'IPD', 'Emergency', 'Follow-up', 'Referral'];
 const PRIORITY_OPTIONS = [
   { value: 1, label: 'Emergency', color: 'bg-red-600' },
   { value: 2, label: 'Urgent', color: 'bg-orange-600' },
@@ -45,7 +69,7 @@ const PRIORITY_OPTIONS = [
 
 const Dashboard = () => {
   const [dialogOpen, setDialogOpen] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState('overview');
+  const [activeTab, setActiveTab] = useState('frontdesk');
   const [patients, setPatients] = useState<any[]>([]);
   const [backendStats, setBackendStats] = useState<any | null>(null);
   const [appointments, setAppointments] = useState<any[]>([]);
@@ -59,8 +83,88 @@ const Dashboard = () => {
   const [checkInLoading, setCheckInLoading] = useState(false);
   const [allQueues, setAllQueues] = useState<any>({});
   const [analytics, setAnalytics] = useState<any>([]);
+  const [searchQuery, setSearchQuery] = useState('');
+
+  // Calculate Front Desk Stats from real data
+  const calculateFrontDeskStats = (): {
+    patientsWaiting: number;
+    patientsAdmitted: number;
+    opdVisitsToday: number;
+    ipdAdmissionsToday: number;
+    dischargesToday: number;
+    totalCollectionsToday: number;
+    outstandingBalances: number;
+    emergencyAlerts: number;
+  } => {
+    const today = new Date().toDateString();
+    
+    // Count patients waiting in queues
+    const patientsWaiting: number = (Object.values(allQueues || {}) as any[]).reduce((sum: number, queue: any) => {
+      return sum + (Array.isArray(queue) ? queue.filter((p: any) => p.status === 'waiting').length : 0);
+    }, 0);
+
+    // Count admitted patients
+    const patientsAdmitted = (appointments || []).filter((a: any) => 
+      a.status === 'admitted' || a.visitType === 'IPD'
+    ).length;
+
+    // OPD visits today
+    const opdVisitsToday = (appointments || []).filter((a: any) => {
+      const appointmentDate = new Date(a.time || a.createdAt).toDateString();
+      return a.visitType === 'OPD' && appointmentDate === today;
+    }).length;
+
+    // IPD admissions today
+    const ipdAdmissionsToday = (appointments || []).filter((a: any) => {
+      const appointmentDate = new Date(a.time || a.createdAt).toDateString();
+      return a.visitType === 'IPD' && appointmentDate === today;
+    }).length;
+
+    // Discharges today
+    const dischargesToday = (appointments || []).filter((a: any) => {
+      const appointmentDate = new Date(a.updatedAt || a.createdAt).toDateString();
+      return a.status === 'discharged' && appointmentDate === today;
+    }).length;
+
+    // Total collections today
+    const totalCollectionsToday = (billing || []).filter((b: any) => {
+      const billingDate = new Date(b.createdAt).toDateString();
+      return b.status === 'paid' && billingDate === today;
+    }).reduce((sum: number, b: any) => sum + (b.amount || 0), 0);
+
+    // Outstanding balances (pending payments)
+    const outstandingBalances = (billing || []).filter((b: any) => 
+      b.status === 'pending' || b.status === 'unpaid'
+    ).reduce((sum: number, b: any) => sum + (b.amount || 0), 0);
+
+    // Emergency alerts - split into two parts to avoid type issues
+    const appointmentEmergencies = (appointments || []).filter((a: any) => 
+      a.priority === 'Critical' || a.priority === 'Emergency' || a.priority === 1
+    ).length;
+    
+    const queueEmergencies: number = (Object.values(allQueues || {}) as any[]).reduce((sum: number, queue: any) => {
+      return sum + (Array.isArray(queue) ? queue.filter((p: any) => p.priority === 'Critical' || p.priority === 1).length : 0);
+    }, 0);
+
+    const emergencyAlerts = appointmentEmergencies + queueEmergencies;
+
+    return {
+      patientsWaiting,
+      patientsAdmitted,
+      opdVisitsToday,
+      ipdAdmissionsToday,
+      dischargesToday,
+      totalCollectionsToday,
+      outstandingBalances,
+      emergencyAlerts
+    };
+  };
+
+  const frontDeskStats = calculateFrontDeskStats();
+
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { register, handleSubmit, formState: { isSubmitting }, reset } = useForm();
 
   useEffect(() => {
     fetchDashboardData();
@@ -151,6 +255,108 @@ const Dashboard = () => {
       });
     } finally {
       setCheckInLoading(false);
+    }
+  };
+
+  // Front Desk Handlers
+  const handlePatientRegistration = async (formData: any) => {
+    try {
+      const result = await createPatient({
+        name: formData.fullName,
+        phone: formData.phone,
+        email: formData.email,
+        age: parseInt(formData.age),
+        gender: formData.gender,
+        address: formData.address,
+        insuranceType: formData.insuranceType
+      });
+
+      toast({
+        title: 'Success',
+        description: `Patient ${formData.fullName} registered successfully. ID: ${result.id}`
+      });
+      setDialogOpen(null);
+      fetchDashboardData();
+    } catch (err: any) {
+      toast({
+        title: 'Registration Failed',
+        description: err?.message || 'Failed to register patient',
+        variant: 'destructive'
+      });
+    }
+  };
+
+  const handleVisitCreation = async (formData: any) => {
+    try {
+      const result = await createAppointment({
+        patientId: formData.patientId,
+        visitType: formData.visitType,
+        department: formData.department,
+        priority: formData.priority,
+        reason: formData.reason
+      });
+
+      toast({
+        title: 'Success',
+        description: `Visit created successfully. Visit ID: ${result.id}`
+      });
+      setDialogOpen(null);
+      fetchDashboardData();
+    } catch (err: any) {
+      toast({
+        title: 'Visit Creation Failed',
+        description: err?.message || 'Failed to create visit',
+        variant: 'destructive'
+      });
+    }
+  };
+
+  const handleAdmission = async (formData: any) => {
+    try {
+      const result = await createAppointment({
+        patientId: formData.patientId,
+        visitType: 'IPD',
+        department: formData.wardType,
+        priority: 'normal',
+        reason: `Admission: ${formData.admissionReason}`,
+        admissionDeposit: parseFloat(formData.admissionDeposit)
+      });
+
+      toast({
+        title: 'Success',
+        description: `Patient admitted successfully. Admission ID: ${result.id}`
+      });
+      setDialogOpen(null);
+      fetchDashboardData();
+    } catch (err: any) {
+      toast({
+        title: 'Admission Failed',
+        description: err?.message || 'Failed to admit patient',
+        variant: 'destructive'
+      });
+    }
+  };
+
+  const handleDischarge = async (formData: any) => {
+    try {
+      const result = await updateAppointment(formData.admissionId, {
+        status: 'discharged',
+        dischargeNotes: formData.dischargeSummary,
+        finalBill: parseFloat(formData.finalBalance)
+      });
+
+      toast({
+        title: 'Success',
+        description: `Patient discharged successfully`
+      });
+      setDialogOpen(null);
+      fetchDashboardData();
+    } catch (err: any) {
+      toast({
+        title: 'Discharge Failed',
+        description: err?.message || 'Failed to discharge patient',
+        variant: 'destructive'
+      });
     }
   };
 
@@ -251,24 +457,552 @@ const Dashboard = () => {
     <DashboardLayout title="Dashboard">
       <div className="space-y-6 animate-fade-in">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-7 lg:grid-cols-7">
+            <TabsTrigger value="frontdesk" className="flex items-center gap-2">
+              <BarChart3 className="w-4 h-4" />
+              <span className="hidden sm:inline text-xs">Front Desk</span>
+            </TabsTrigger>
+            <TabsTrigger value="insurance" className="flex items-center gap-2">
+              <Phone className="w-4 h-4" />
+              <span className="hidden sm:inline text-xs">Insurance</span>
+            </TabsTrigger>
+            <TabsTrigger value="referrals" className="flex items-center gap-2">
+              <ArrowRight className="w-4 h-4" />
+              <span className="hidden sm:inline text-xs">Referrals</span>
+            </TabsTrigger>
+            <TabsTrigger value="payments" className="flex items-center gap-2">
+              <CreditCard className="w-4 h-4" />
+              <span className="hidden sm:inline text-xs">Payments</span>
+            </TabsTrigger>
+            <TabsTrigger value="reports" className="flex items-center gap-2">
+              <FileText className="w-4 h-4" />
+              <span className="hidden sm:inline text-xs">Reports</span>
+            </TabsTrigger>
+            <TabsTrigger value="emergency" className="flex items-center gap-2">
+              <AlertCircle className="w-4 h-4" />
+              <span className="hidden sm:inline text-xs">Emergency</span>
+            </TabsTrigger>
             <TabsTrigger value="overview" className="flex items-center gap-2">
               <Activity className="w-4 h-4" />
-              <span className="hidden sm:inline">Overview</span>
-            </TabsTrigger>
-            <TabsTrigger value="check-in" className="flex items-center gap-2">
-              <UserPlus className="w-4 h-4" />
-              <span className="hidden sm:inline">Check-In</span>
-            </TabsTrigger>
-            <TabsTrigger value="queues" className="flex items-center gap-2">
-              <Users className="w-4 h-4" />
-              <span className="hidden sm:inline">Queues</span>
-            </TabsTrigger>
-            <TabsTrigger value="queue-analytics" className="flex items-center gap-2">
-              <Activity className="w-4 h-4" />
-              <span className="hidden sm:inline">Analytics</span>
+              <span className="hidden sm:inline text-xs">Overview</span>
             </TabsTrigger>
           </TabsList>
+
+          {/* Front Desk Tab */}
+          <TabsContent value="frontdesk" className="space-y-6 mt-4">
+            {/* Emergency Alerts */}
+            {frontDeskStats.emergencyAlerts > 0 && (
+              <Card className="border-red-500 bg-red-50">
+                <CardContent className="p-4 flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <AlertCircle className="w-6 h-6 text-red-600" />
+                    <div>
+                      <div className="font-semibold text-red-900">{frontDeskStats.emergencyAlerts} Active Emergency Alert(s)</div>
+                      <div className="text-sm text-red-700">Immediate attention required</div>
+                    </div>
+                  </div>
+                  <Button className="bg-red-600 hover:bg-red-700">View Details</Button>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Front Desk Stats Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              <Card className="card-hover cursor-pointer hover:shadow-lg transition-shadow">
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="w-12 h-12 rounded-xl bg-blue-100 flex items-center justify-center text-blue-600">
+                      <Users className="w-6 h-6" />
+                    </div>
+                    <Badge variant="outline">Today</Badge>
+                  </div>
+                  <div className="text-2xl font-bold">{frontDeskStats.patientsWaiting}</div>
+                  <div className="text-sm text-muted-foreground">Patients Waiting</div>
+                </CardContent>
+              </Card>
+
+              <Card className="card-hover cursor-pointer hover:shadow-lg transition-shadow">
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="w-12 h-12 rounded-xl bg-green-100 flex items-center justify-center text-green-600">
+                      <CheckCircle className="w-6 h-6" />
+                    </div>
+                    <Badge variant="outline">Active</Badge>
+                  </div>
+                  <div className="text-2xl font-bold">{frontDeskStats.patientsAdmitted}</div>
+                  <div className="text-sm text-muted-foreground">Patients Admitted</div>
+                </CardContent>
+              </Card>
+
+              <Card className="card-hover cursor-pointer hover:shadow-lg transition-shadow">
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="w-12 h-12 rounded-xl bg-purple-100 flex items-center justify-center text-purple-600">
+                      <Calendar className="w-6 h-6" />
+                    </div>
+                    <Badge variant="outline">OPD</Badge>
+                  </div>
+                  <div className="text-2xl font-bold">{frontDeskStats.opdVisitsToday}</div>
+                  <div className="text-sm text-muted-foreground">OPD Visits Today</div>
+                </CardContent>
+              </Card>
+
+              <Card className="card-hover cursor-pointer hover:shadow-lg transition-shadow">
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="w-12 h-12 rounded-xl bg-orange-100 flex items-center justify-center text-orange-600">
+                      <CreditCard className="w-6 h-6" />
+                    </div>
+                    <TrendingUp className="w-4 h-4 text-success" />
+                  </div>
+                  <div className="text-2xl font-bold">KES {frontDeskStats.totalCollectionsToday.toLocaleString()}</div>
+                  <div className="text-sm text-muted-foreground">Collections Today</div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Secondary Stats Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <Card>
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm font-medium text-muted-foreground">IPD Admissions Today</span>
+                    <Bed className="w-4 h-4 text-muted-foreground" />
+                  </div>
+                  <div className="text-2xl font-bold">{frontDeskStats.ipdAdmissionsToday}</div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm font-medium text-muted-foreground">Discharges Today</span>
+                    <LogOut className="w-4 h-4 text-muted-foreground" />
+                  </div>
+                  <div className="text-2xl font-bold">{frontDeskStats.dischargesToday}</div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm font-medium text-muted-foreground">Outstanding Balance</span>
+                    <FileText className="w-4 h-4 text-muted-foreground" />
+                  </div>
+                  <div className="text-2xl font-bold">KES {frontDeskStats.outstandingBalances.toLocaleString()}</div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Quick Action Buttons */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <CheckCircle className="w-5 h-5" />
+                  Quick Actions
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                <Dialog open={dialogOpen === 'register'} onOpenChange={(open) => setDialogOpen(open ? 'register' : null)}>
+                  <DialogTrigger asChild>
+                    <Button className="flex flex-col items-center justify-center h-24 gap-2 hover:shadow-md transition-shadow">
+                      <UserPlus className="w-5 h-5" />
+                      <span className="text-xs">Register Patient</span>
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>Register New Patient</DialogTitle>
+                    </DialogHeader>
+                    <PatientRegistrationForm onSubmit={handlePatientRegistration} />
+                  </DialogContent>
+                </Dialog>
+
+                <Dialog open={dialogOpen === 'visit'} onOpenChange={(open) => setDialogOpen(open ? 'visit' : null)}>
+                  <DialogTrigger asChild>
+                    <Button variant="outline" className="flex flex-col items-center justify-center h-24 gap-2 hover:shadow-md transition-shadow">
+                      <Calendar className="w-5 h-5" />
+                      <span className="text-xs">Create Visit</span>
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>Create New Visit</DialogTitle>
+                    </DialogHeader>
+                    <VisitCreationForm onSubmit={handleVisitCreation} />
+                  </DialogContent>
+                </Dialog>
+
+                <Dialog open={dialogOpen === 'admit'} onOpenChange={(open) => setDialogOpen(open ? 'admit' : null)}>
+                  <DialogTrigger asChild>
+                    <Button variant="outline" className="flex flex-col items-center justify-center h-24 gap-2 hover:shadow-md transition-shadow">
+                      <Bed className="w-5 h-5" />
+                      <span className="text-xs">Admit Patient</span>
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>Admit Patient to IPD</DialogTitle>
+                    </DialogHeader>
+                    <AdmissionForm onSubmit={handleAdmission} />
+                  </DialogContent>
+                </Dialog>
+
+                <Dialog open={dialogOpen === 'discharge'} onOpenChange={(open) => setDialogOpen(open ? 'discharge' : null)}>
+                  <DialogTrigger asChild>
+                    <Button variant="outline" className="flex flex-col items-center justify-center h-24 gap-2 hover:shadow-md transition-shadow">
+                      <LogOut className="w-5 h-5" />
+                      <span className="text-xs">Discharge Patient</span>
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>Discharge Patient</DialogTitle>
+                    </DialogHeader>
+                    <DischargeForm onSubmit={handleDischarge} />
+                  </DialogContent>
+                </Dialog>
+              </CardContent>
+            </Card>
+
+            {/* Patient Search Section */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Search className="w-5 h-5" />
+                  Patient Lookup & Insurance Verification
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <Input 
+                  placeholder="Search by phone number, patient ID, or name..." 
+                  value={searchQuery} 
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full"
+                />
+                {searchQuery && (
+                  <div className="space-y-2">
+                    {patients
+                      .filter(p => 
+                        p.phone?.includes(searchQuery) || 
+                        p.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                        p.id?.includes(searchQuery)
+                      )
+                      .slice(0, 5)
+                      .map((patient: any) => (
+                        <div key={patient.id} className="p-3 border rounded-lg flex items-center justify-between hover:bg-accent cursor-pointer">
+                          <div>
+                            <div className="font-medium">{patient.name}</div>
+                            <div className="text-sm text-muted-foreground">
+                              {patient.phone} • {patient.insuranceType || 'No Insurance'} • ID: {patient.id}
+                            </div>
+                          </div>
+                          <ArrowRight className="w-4 h-4 text-muted-foreground" />
+                        </div>
+                      ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Bottom Navigation */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-3 pb-4">
+              <Button variant="outline" className="h-12 flex items-center gap-2" onClick={() => navigate('/dashboard/queue')}>
+                <Users className="w-4 h-4" />
+                Queue Management
+              </Button>
+              <Button variant="outline" className="h-12 flex items-center gap-2">
+                <Phone className="w-4 h-4" />
+                Insurance Verification
+              </Button>
+              <Button variant="outline" className="h-12 flex items-center gap-2">
+                <Bed className="w-4 h-4" />
+                IPD Management
+              </Button>
+              <Button variant="outline" className="h-12 flex items-center gap-2">
+                <BarChart3 className="w-4 h-4" />
+                Daily Reports
+              </Button>
+            </div>
+          </TabsContent>
+
+          {/* Insurance & Pre-Authorization Tab */}
+          <TabsContent value="insurance" className="space-y-6 mt-4">
+            <Card>
+              <CardHeader>
+                <CardTitle>Insurance Pre-Authorization</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <Input placeholder="Patient ID or Phone..." className="w-full" />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="p-4 border rounded-lg">
+                    <h3 className="font-semibold mb-2">Insurance Details</h3>
+                    <div className="space-y-2 text-sm">
+                      <div><span className="text-muted-foreground">Provider:</span> <span className="font-medium">NHIF</span></div>
+                      <div><span className="text-muted-foreground">Policy #:</span> <span className="font-medium">-</span></div>
+                      <div><span className="text-muted-foreground">Status:</span> <Badge variant="outline">Not Verified</Badge></div>
+                    </div>
+                  </div>
+                  <div className="p-4 border rounded-lg">
+                    <h3 className="font-semibold mb-2">Coverage Limits</h3>
+                    <div className="space-y-2 text-sm">
+                      <div><span className="text-muted-foreground">Annual Limit:</span> <span className="font-medium">KES 500,000</span></div>
+                      <div><span className="text-muted-foreground">Remaining:</span> <span className="font-medium text-green-600">KES 450,000</span></div>
+                      <div><span className="text-muted-foreground">Co-pay:</span> <span className="font-medium">10%</span></div>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Policy Verification History</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  <div className="p-3 border rounded-lg text-sm">
+                    <div className="flex justify-between mb-1">
+                      <span className="font-medium">Patient: -</span>
+                      <Badge>Pending</Badge>
+                    </div>
+                    <div className="text-muted-foreground">Verified by: Front Desk | Date: -</div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Referrals Tab */}
+          <TabsContent value="referrals" className="space-y-6 mt-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-base">Create Outgoing Referral</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <Input placeholder="Patient Name" />
+                  <Input placeholder="Referring Doctor" />
+                  <select className="w-full p-2 border rounded-md text-sm">
+                    <option>Select Specialist/Facility</option>
+                    <option>Cardiology Center</option>
+                    <option>Orthopedic Hospital</option>
+                    <option>Eye Care Institute</option>
+                  </select>
+                  <textarea placeholder="Reason for Referral" className="w-full p-2 border rounded-md text-sm" rows={3} />
+                  <Button className="w-full">Create Referral</Button>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-base">Incoming Referrals</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3 max-h-96 overflow-y-auto">
+                  <div className="p-3 border rounded-lg text-sm bg-blue-50">
+                    <div className="font-medium">No incoming referrals</div>
+                    <div className="text-xs text-muted-foreground mt-1">Referrals from external facilities will appear here</div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Referral History</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2 text-sm text-center text-muted-foreground py-8">
+                  No referrals yet
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Payments Tab */}
+          <TabsContent value="payments" className="space-y-6 mt-4">
+            <Card>
+              <CardHeader>
+                <CardTitle>Process Payment</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <Input placeholder="Patient ID / Phone" />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-sm font-medium block mb-2">Amount</label>
+                    <Input type="number" placeholder="0.00" />
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium block mb-2">Payment Method</label>
+                    <select className="w-full p-2 border rounded-md text-sm">
+                      <option>Select Method</option>
+                      <option>Cash</option>
+                      <option>Card</option>
+                      <option>M-Pesa</option>
+                      <option>Bank Transfer</option>
+                      <option>Cheque</option>
+                    </select>
+                  </div>
+                </div>
+                <div>
+                  <label className="text-sm font-medium block mb-2">Notes</label>
+                  <textarea placeholder="Payment notes..." className="w-full p-2 border rounded-md text-sm" rows={2} />
+                </div>
+                <Button className="w-full">Process Payment</Button>
+              </CardContent>
+            </Card>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <Card>
+                <CardContent className="p-6">
+                  <div className="text-sm text-muted-foreground mb-2">Cash on Hand</div>
+                  <div className="text-2xl font-bold">KES 25,000</div>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardContent className="p-6">
+                  <div className="text-sm text-muted-foreground mb-2">Today's Cash Collected</div>
+                  <div className="text-2xl font-bold text-green-600">KES 185,000</div>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardContent className="p-6">
+                  <div className="text-sm text-muted-foreground mb-2">Pending Refunds</div>
+                  <div className="text-2xl font-bold text-orange-600">KES 5,000</div>
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
+
+          {/* Reports Tab */}
+          <TabsContent value="reports" className="space-y-6 mt-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              <Card>
+                <CardContent className="p-6">
+                  <div className="text-sm text-muted-foreground">Total Patients Today</div>
+                  <div className="text-2xl font-bold mt-2">127</div>
+                  <div className="text-xs text-muted-foreground mt-2">OPD: 89 | IPD: 12 | Emergency: 26</div>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardContent className="p-6">
+                  <div className="text-sm text-muted-foreground">Revenue Today</div>
+                  <div className="text-2xl font-bold mt-2 text-green-600">KES 285,500</div>
+                  <div className="text-xs text-muted-foreground mt-2">Collected: KES 185,000</div>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardContent className="p-6">
+                  <div className="text-sm text-muted-foreground">Outstanding Balance</div>
+                  <div className="text-2xl font-bold mt-2 text-orange-600">KES 45,000</div>
+                  <div className="text-xs text-muted-foreground mt-2">45 pending invoices</div>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardContent className="p-6">
+                  <div className="text-sm text-muted-foreground">Insurance Claims</div>
+                  <div className="text-2xl font-bold mt-2">32</div>
+                  <div className="text-xs text-muted-foreground mt-2">Pending: 8 | Approved: 24</div>
+                </CardContent>
+              </Card>
+            </div>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Daily Summary Report</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                    <div className="p-3 bg-blue-50 rounded-lg">
+                      <div className="text-muted-foreground">New Patients</div>
+                      <div className="font-bold text-lg">34</div>
+                    </div>
+                    <div className="p-3 bg-green-50 rounded-lg">
+                      <div className="text-muted-foreground">Follow-ups</div>
+                      <div className="font-bold text-lg">89</div>
+                    </div>
+                    <div className="p-3 bg-orange-50 rounded-lg">
+                      <div className="text-muted-foreground">Discharges</div>
+                      <div className="font-bold text-lg">12</div>
+                    </div>
+                    <div className="p-3 bg-red-50 rounded-lg">
+                      <div className="text-muted-foreground">Emergency</div>
+                      <div className="font-bold text-lg">26</div>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <div className="flex gap-2">
+              <Button variant="outline" className="flex-1">
+                <FileText className="w-4 h-4 mr-2" />
+                Generate PDF Report
+              </Button>
+              <Button variant="outline" className="flex-1">
+                <BarChart3 className="w-4 h-4 mr-2" />
+                Export to Excel
+              </Button>
+            </div>
+          </TabsContent>
+
+          {/* Emergency Mode Tab */}
+          <TabsContent value="emergency" className="space-y-6 mt-4">
+            <Card className="border-red-500 bg-red-50">
+              <CardHeader>
+                <CardTitle className="text-red-900">Emergency Mass Registration Mode</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="bg-red-100 p-3 rounded-lg text-sm text-red-900">
+                  <strong>Note:</strong> Use only during mass casualty or disaster events. Temporary IDs will be issued.
+                </div>
+                <Button className="w-full bg-red-600 hover:bg-red-700 h-12">
+                  Activate Emergency Mode
+                </Button>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Quick Emergency Registration</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <Input placeholder="Patient Name (required)" />
+                <Input placeholder="Age / DOB" />
+                <select className="w-full p-2 border rounded-md text-sm">
+                  <option>Select Priority</option>
+                  <option>Critical</option>
+                  <option>Urgent</option>
+                  <option>Moderate</option>
+                  <option>Minor</option>
+                </select>
+                <textarea placeholder="Emergency Details / Reason" className="w-full p-2 border rounded-md text-sm" rows={3} />
+                <div className="bg-blue-50 p-3 rounded-lg text-sm">
+                  <div className="font-medium mb-1">Temporary ID will be: TMP-2026-001</div>
+                  <div className="text-xs text-muted-foreground">Assign MRN after initial stabilization</div>
+                </div>
+                <Button className="w-full">Register Patient</Button>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Disaster Event Tagging</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div>
+                  <label className="text-sm font-medium block mb-2">Event/Disaster Tag</label>
+                  <Input placeholder="e.g., Traffic Accident on Jan 20, 2026" />
+                </div>
+                <div className="p-3 border rounded-lg text-sm">
+                  <div className="font-medium mb-2">Patients Registered Under This Event:</div>
+                  <div className="text-muted-foreground">None yet</div>
+                </div>
+                <Button variant="outline" className="w-full">Save Event Tag</Button>
+              </CardContent>
+            </Card>
+          </TabsContent>
 
           {/* Overview Tab (Original Dashboard) */}
           <TabsContent value="overview" className="space-y-6 mt-4">

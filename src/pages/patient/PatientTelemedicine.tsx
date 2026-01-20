@@ -1,7 +1,7 @@
 import PatientLayout from "@/components/PatientLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Video, Calendar, Clock, CheckCircle2, Phone } from "lucide-react";
+import { Video, Calendar, Clock, CheckCircle2 } from "lucide-react";
 
 const upcomingSessions = [
   { doctor: "Dr. Mwangi", specialty: "Cardiologist", date: "Jan 12, 2026", time: "02:30 PM", status: "Scheduled" },

@@ -1,13 +1,10 @@
-import { ReactNode } from "react";
+import { ReactNode, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import {
   LayoutDashboard,
-  Users,
+  Video,
   Calendar,
-  ListOrdered,
-  CreditCard,
-  Pill,
-  BarChart3,
+  Play,
   Settings,
   LogOut,
   Heart,
@@ -18,25 +15,21 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { useState } from "react";
 import { cn } from "@/lib/utils";
 
 const menuItems = [
-  { icon: LayoutDashboard, label: "Dashboard", path: "/dashboard" },
-  { icon: Users, label: "Patients", path: "/patients" },
-  { icon: Calendar, label: "Appointments", path: "/appointments" },
-  { icon: ListOrdered, label: "Queue", path: "/queue" },
-  { icon: CreditCard, label: "Billing", path: "/billing" },
-  { icon: Pill, label: "Pharmacy", path: "/pharmacy" },
-  { icon: BarChart3, label: "Analytics", path: "/analytics" },
+  { icon: LayoutDashboard, label: "Dashboard", path: "/telemedicine/dashboard" },
+  { icon: Calendar, label: "Schedule Session", path: "/telemedicine/schedule" },
+  { icon: Video, label: "Active Session", path: "/telemedicine/session" },
+  { icon: Play, label: "Recordings", path: "/telemedicine/recordings" },
 ];
 
-interface DashboardLayoutProps {
+interface TelemedicineLayoutProps {
   children: ReactNode;
   title: string;
 }
 
-const DashboardLayout = ({ children, title }: DashboardLayoutProps) => {
+const TelemedicineLayout = ({ children, title }: TelemedicineLayoutProps) => {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const location = useLocation();
 
@@ -51,14 +44,17 @@ const DashboardLayout = ({ children, title }: DashboardLayoutProps) => {
       >
         {/* Logo */}
         <div className="h-16 flex items-center justify-between px-4 border-b border-sidebar-border">
-          <Link to="/dashboard" className="flex items-center gap-3">
+          <Link to="/telemedicine/dashboard" className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-sidebar-primary flex items-center justify-center shrink-0">
-              <Heart className="w-6 h-6 text-sidebar-primary-foreground" />
+              <Video className="w-6 h-6 text-sidebar-primary-foreground" />
             </div>
             {sidebarOpen && (
-              <span className="font-display text-lg font-bold text-sidebar-foreground">
-                SmartCare360
-              </span>
+              <div className="flex flex-col">
+                <span className="font-display text-lg font-bold text-sidebar-foreground leading-tight">
+                  SmartCare360
+                </span>
+                <span className="text-xs text-sidebar-foreground/70">Telemedicine Center</span>
+              </div>
             )}
           </Link>
           <Button
@@ -132,7 +128,7 @@ const DashboardLayout = ({ children, title }: DashboardLayoutProps) => {
             <div className="relative hidden md:block">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <Input
-                placeholder="Search patients, appointments..."
+                placeholder="Search consultants, sessions..."
                 className="w-64 pl-9 bg-muted/50"
               />
             </div>
@@ -141,16 +137,16 @@ const DashboardLayout = ({ children, title }: DashboardLayoutProps) => {
               <span className="absolute top-1 right-1 w-2 h-2 bg-destructive rounded-full" />
             </Button>
             <div className="w-9 h-9 rounded-full bg-primary flex items-center justify-center text-primary-foreground font-medium">
-              JD
+              TM
             </div>
           </div>
         </header>
 
-        {/* Page Content */}
+        {/* Content Area */}
         <main className="p-6">{children}</main>
       </div>
     </div>
   );
 };
 
-export default DashboardLayout;
+export default TelemedicineLayout;

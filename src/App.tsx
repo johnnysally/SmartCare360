@@ -110,6 +110,12 @@ import Inventory from "./pages/pharmacy/Inventory";
 import PharmacyAnalytics from "./pages/pharmacy/Analytics";
 import DrugReports from "./pages/pharmacy/DrugReports";
 
+// Telemedicine Pages
+import TelemedicineDashboard from "./pages/telemedicine/TelemedicineDashboard";
+import TelemedicineSchedule from "./pages/telemedicine/TelemedicineSchedule";
+import ActiveSession from "./pages/telemedicine/ActiveSession";
+import TelemedicineRecordings from "./pages/telemedicine/Recordings";
+
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -219,6 +225,12 @@ const App = () => (
           <Route path="/pharmacy/inventory" element={<ProtectedRoute><Inventory /></ProtectedRoute>} />
           <Route path="/pharmacy/drug-reports" element={<ProtectedRoute><DrugReports /></ProtectedRoute>} />
           <Route path="/pharmacy/analytics" element={<ProtectedRoute><PharmacyAnalytics /></ProtectedRoute>} />
+          
+          {/* Telemedicine Routes */}
+          <Route path="/telemedicine/dashboard" element={<ProtectedRoute><TelemedicineDashboard /></ProtectedRoute>} />
+          <Route path="/telemedicine/schedule" element={<ProtectedRoute><TelemedicineSchedule /></ProtectedRoute>} />
+          <Route path="/telemedicine/session" element={<ProtectedRoute><ActiveSession /></ProtectedRoute>} />
+          <Route path="/telemedicine/recordings" element={<ProtectedRoute><TelemedicineRecordings /></ProtectedRoute>} />
           
           <Route path="*" element={<NotFound />} />
         </Routes>
